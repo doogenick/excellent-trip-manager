@@ -157,7 +157,7 @@ export function SettingsPage() {
                       <SelectValue placeholder="All Suppliers" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Suppliers</SelectItem>
+                      <SelectItem value="all-suppliers">All Suppliers</SelectItem>
                       {mockSuppliers.map(supplier => (
                         <SelectItem key={supplier.id} value={supplier.id}>{supplier.name}</SelectItem>
                       ))}
@@ -171,7 +171,7 @@ export function SettingsPage() {
                       <SelectValue placeholder="All Services" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Services</SelectItem>
+                      <SelectItem value="all-services">All Services</SelectItem>
                       <SelectItem value="Accommodation">Accommodation</SelectItem>
                       <SelectItem value="Activities">Activities</SelectItem>
                       <SelectItem value="Transfers">Transfers</SelectItem>
@@ -187,7 +187,7 @@ export function SettingsPage() {
                       <SelectValue placeholder="All Seasons" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Seasons</SelectItem>
+                      <SelectItem value="all-seasons">All Seasons</SelectItem>
                       <SelectItem value="high">High Season</SelectItem>
                       <SelectItem value="standard">Standard Season</SelectItem>
                       <SelectItem value="low">Low Season</SelectItem>

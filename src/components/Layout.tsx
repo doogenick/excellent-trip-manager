@@ -28,7 +28,7 @@ export default function Layout({ children }: LayoutProps) {
       <div className="flex min-h-screen w-full">
         <Sidebar
           defaultCollapsed={false}
-          collapsible={true}
+          collapsible="icon"
           onCollapsedChange={setCollapsed}
         >
           <SidebarHeader className="flex h-14 items-center border-b px-4">
