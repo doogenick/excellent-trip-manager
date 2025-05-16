@@ -8,6 +8,7 @@ interface CostSummarySectionProps {
   calculateAccommodationCost: () => number;
   calculateActivityCost: () => number;
   calculateMealCost: () => number;
+  calculateParkFeesCost: () => number;
   calculateTotalTourCost: () => number;
   calculateFixedCosts: () => number;
   calculatePerPersonCosts: () => number;
@@ -25,6 +26,7 @@ export function CostSummarySection({
   calculateAccommodationCost,
   calculateActivityCost,
   calculateMealCost,
+  calculateParkFeesCost,
   calculateTotalTourCost,
   calculateFixedCosts,
   calculatePerPersonCosts,
@@ -74,6 +76,10 @@ export function CostSummarySection({
               <div className="flex justify-between">
                 <span className="text-sm">Meals Cost:</span>
                 <span className="font-medium">${calculateMealCost().toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm">Park Fees Cost:</span>
+                <span className="font-medium">${calculateParkFeesCost().toLocaleString()}</span>
               </div>
               <div className="flex justify-between pt-2 border-t mt-2">
                 <span className="font-medium">Total Tour Cost:</span>

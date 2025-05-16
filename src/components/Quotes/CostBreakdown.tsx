@@ -73,12 +73,22 @@ export function CostBreakdown() {
               calculateVehicleCost={calculator.calculateVehicleCost}
               calculateFuelCost={calculator.calculateFuelCost}
               currentPax={calculator.currentPax}
+              customVehicleName={calculator.customVehicleName}
+              setCustomVehicleName={calculator.setCustomVehicleName}
+              customDailyRate={calculator.customDailyRate}
+              setCustomDailyRate={calculator.setCustomDailyRate}
+              customFuelConsumption={calculator.customFuelConsumption}
+              setCustomFuelConsumption={calculator.setCustomFuelConsumption}
+              vehicleNotes={calculator.vehicleNotes}
+              setVehicleNotes={calculator.setVehicleNotes}
             />
             
             <CrewSection 
               crew={calculator.crew}
               setCrew={calculator.setCrew}
               calculateCrewCost={calculator.calculateCrewCost}
+              crewMealRates={calculator.crewMealRates}
+              setCrewMealRates={calculator.setCrewMealRates}
             />
           </div>
           
@@ -91,6 +101,10 @@ export function CostBreakdown() {
               calculateAccommodationCost={calculator.calculateAccommodationCost}
               currentPax={calculator.currentPax}
               tourDuration={calculator.tourDuration}
+              selectedRoomType={calculator.selectedRoomType}
+              setSelectedRoomType={calculator.setSelectedRoomType}
+              selectedMealBasis={calculator.selectedMealBasis}
+              setSelectedMealBasis={calculator.setSelectedMealBasis}
             />
             
             <MealsActivitiesSection 
@@ -135,6 +149,7 @@ export function CostBreakdown() {
             calculateProfit={calculator.calculateProfit}
             currentPax={calculator.currentPax}
             tourDuration={calculator.tourDuration}
+            calculateParkFeesCost={calculator.calculateParkFeesCost}
           />
         </TabsContent>
         
@@ -150,6 +165,10 @@ export function CostBreakdown() {
             calculateVehicleCost={calculator.calculateVehicleCost}
             calculateCrewCost={calculator.calculateCrewCost}
             currentPax={calculator.currentPax}
+            selectedRoomType={calculator.selectedRoomType}
+            selectedMealBasis={calculator.selectedMealBasis}
+            parkFees={calculator.parkFees}
+            setParkFees={calculator.setParkFees}
           />
         </TabsContent>
         
@@ -163,6 +182,7 @@ export function CostBreakdown() {
             calculateActivityCost={calculator.calculateActivityCost}
             calculateMealCost={calculator.calculateMealCost}
             tourDuration={calculator.tourDuration}
+            calculateParkFeesCost={calculator.calculateParkFeesCost}
           />
         </TabsContent>
       </Tabs>

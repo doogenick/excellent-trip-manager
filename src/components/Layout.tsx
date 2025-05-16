@@ -1,107 +1,141 @@
 
 import { useState } from "react";
-import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { Calendar, FileText, Home, Plus, Search, Send, Settings, Truck, Users } from "lucide-react";
+import { Sidebar } from "./ui/sidebar";
+import { NavLink, useLocation } from "react-router-dom";
+import {
+  BarChart3,
+  Calendar,
+  CreditCard,
+  Settings,
+  Users,
+  FileText,
+  Home
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { Button } from "./ui/button";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-export default function Layout({ children }: LayoutProps) {
-  const navigate = useNavigate();
-  const location = useLocation();
+const Layout = ({ children }: LayoutProps) => {
   const [collapsed, setCollapsed] = useState(false);
-
-  const menuItems = [
-    { icon: Home, label: "Dashboard", path: "/" },
-    { icon: FileText, label: "Quotes", path: "/quotes" },
-    { icon: Calendar, label: "Bookings", path: "/bookings" },
-    { icon: Truck, label: "Confirmed Tours", path: "/confirmed-tours" },
-    { icon: Users, label: "Clients & Agents", path: "/clients" },
-    { icon: Settings, label: "Settings", path: "/settings" },
-  ];
+  const location = useLocation();
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <Sidebar
-          collapsible="icon"
-          collapsed={collapsed}
-          onCollapsedChange={setCollapsed}
-        >
-          <SidebarHeader className="flex h-14 items-center border-b px-4">
-            <div className="flex items-center gap-2">
-              {!collapsed && (
-                <span className="font-bold text-xl">Nomad Trips</span>
+    <div className="grid min-h-screen w-full md:grid-cols-[auto_1fr] lg:grid-cols-[240px_1fr]">
+      <Sidebar 
+        className="hidden border-r md:block" 
+        // Remove the invalid 'collapsed' and 'onCollapsedChange' props
+        // And use collapsible="icon" instead as per the component's API
+        collapsible="icon"
+      >
+        <div className="flex h-full max-h-screen flex-col gap-2">
+          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+            <NavLink
+              to="/"
+              className="flex items-center gap-2 font-semibold"
+            >
+              <FileText className="h-6 w-6" />
+              <span>Nomad Admin</span>
+            </NavLink>
+            <Button
+              variant="outline"
+              size="icon"
+              className="ml-auto h-8 w-8"
+              onClick={() => setCollapsed(!collapsed)}
+            >
+              <span className="sr-only">Toggle Sidebar</span>
+              {collapsed ? (
+                <Home className="h-4 w-4" />
+              ) : (
+                <Home className="h-4 w-4" />
               )}
-            </div>
-          </SidebarHeader>
-          <SidebarContent className="p-2">
-            <SidebarGroup>
-              <SidebarMenu>
-                {menuItems.map((item) => (
-                  <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton
-                      asChild
-                      className={cn(
-                        "flex items-center gap-4 px-3 py-2 hover:bg-sidebar-accent",
-                        location.pathname === item.path && "bg-sidebar-accent"
-                      )}
-                      onClick={() => navigate(item.path)}
-                    >
-                      <div>
-                        <item.icon className="h-5 w-5" />
-                        <span>{item.label}</span>
-                      </div>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroup>
-
-            <SidebarGroup className="pt-4">
-              <div className="px-4">
-                <Button 
-                  className="w-full flex items-center gap-2 bg-sand-500 hover:bg-sand-600"
-                  onClick={() => navigate("/quotes/new")}
-                >
-                  <Plus className="h-4 w-4" />
-                  {!collapsed && <span>New Quote</span>}
-                </Button>
-              </div>
-            </SidebarGroup>
-          </SidebarContent>
-        </Sidebar>
-
-        <div className="flex flex-col flex-1">
-          <header className="h-14 border-b flex items-center justify-between px-4 lg:px-6">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger />
-              <div className="text-lg font-semibold">
-                {location.pathname === "/" && "Dashboard"}
-                {location.pathname === "/quotes" && "Quotes"}
-                {location.pathname === "/quotes/new" && "Create New Quote"}
-                {location.pathname.startsWith("/quotes/") && 
-                  location.pathname !== "/quotes/new" && "Quote Details"}
-                {location.pathname === "/bookings" && "Bookings"}
-                {location.pathname === "/confirmed-tours" && "Confirmed Tours"}
-                {location.pathname === "/clients" && "Clients & Agents"}
-                {location.pathname === "/settings" && "Settings"}
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Search className="h-5 w-5 text-muted-foreground" />
-              <Send className="h-5 w-5 text-muted-foreground" />
-            </div>
-          </header>
-          <main className="flex-1 overflow-y-auto">
-            {children}
-          </main>
+            </Button>
+          </div>
+          <div className="flex-1 overflow-auto py-2">
+            <nav className="grid items-start px-2 text-sm font-medium">
+              <NavLink
+                to="/"
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+                  location.pathname === "/" && "bg-muted"
+                )}
+              >
+                <Home className="h-4 w-4" />
+                <span>Dashboard</span>
+              </NavLink>
+              <NavLink
+                to="/quotes"
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+                  location.pathname.includes("/quotes") && "bg-muted"
+                )}
+              >
+                <FileText className="h-4 w-4" />
+                <span>Quotes</span>
+              </NavLink>
+              <NavLink
+                to="/confirmed-tours"
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+                  location.pathname.includes("/confirmed-tours") && "bg-muted"
+                )}
+              >
+                <Calendar className="h-4 w-4" />
+                <span>Confirmed Tours</span>
+              </NavLink>
+              <NavLink
+                to="/bookings"
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+                  location.pathname.includes("/bookings") && "bg-muted"
+                )}
+              >
+                <CreditCard className="h-4 w-4" />
+                <span>Bookings</span>
+              </NavLink>
+              <NavLink
+                to="/clients"
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+                  location.pathname.includes("/clients") && "bg-muted"
+                )}
+              >
+                <Users className="h-4 w-4" />
+                <span>Clients</span>
+              </NavLink>
+              <NavLink
+                to="/stats"
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+                  location.pathname.includes("/stats") && "bg-muted"
+                )}
+              >
+                <BarChart3 className="h-4 w-4" />
+                <span>Statistics</span>
+              </NavLink>
+              <NavLink
+                to="/settings"
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+                  location.pathname.includes("/settings") && "bg-muted"
+                )}
+              >
+                <Settings className="h-4 w-4" />
+                <span>Settings</span>
+              </NavLink>
+            </nav>
+          </div>
         </div>
+      </Sidebar>
+      <div className="flex flex-col">
+        <main className="flex flex-1 flex-col">
+          {children}
+        </main>
       </div>
-    </SidebarProvider>
+    </div>
   );
-}
+};
+
+export default Layout;
