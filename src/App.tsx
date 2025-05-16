@@ -13,6 +13,7 @@ import BookingsPage from "./pages/BookingsPage";
 import ClientsAgentsPage from "./pages/ClientsAgentsPage";
 import SettingsPage from "./pages/SettingsPage";
 import ConfirmedToursPage from "./pages/ConfirmedToursPage";
+import CostBreakdownPage from "./pages/CostBreakdownPage";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/quotes" element={<QuotesPage />} />
           <Route path="/quotes/new" element={<NewQuotePage />} />
           <Route path="/quotes/:id" element={<QuoteDetailPage />} />
+          <Route path="/quotes/cost-breakdown" element={<CostBreakdownPage />} />
           <Route path="/bookings" element={<BookingsPage />} />
           <Route path="/clients" element={<ClientsAgentsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
