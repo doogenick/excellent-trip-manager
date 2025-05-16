@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,43 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Custom colors for our nomad trip manager
+				sand: {
+					50: '#f9f5f0',
+					100: '#e8e0d4',
+					200: '#d6c7b0',
+					300: '#c4ae8c',
+					400: '#b29969',
+					500: '#a5885a',
+					600: '#8c6f45',
+					700: '#725735',
+					800: '#594025',
+					900: '#412c16',
+				},
+				savanna: {
+					50: '#f2f6e8',
+					100: '#e0e9c9',
+					200: '#ccdca7',
+					300: '#b9cf85',
+					400: '#a6c264',
+					500: '#91ad4c',
+					600: '#778f3a',
+					700: '#5d702d',
+					800: '#445221',
+					900: '#2c3414',
+				},
+				sunset: {
+					50: '#fdf3f0',
+					100: '#faddd4',
+					200: '#f7c7b8',
+					300: '#f4b09c',
+					400: '#f09a7f',
+					500: '#ea7d5b',
+					600: '#d05e3a',
+					700: '#a7462b',
+					800: '#7e321d',
+					900: '#551e0f',
 				}
 			},
 			borderRadius: {
@@ -84,11 +122,22 @@ export default {
 					to: {
 						height: '0'
 					}
-				}
+				},
+				'fade-in': {
+					'0%': {
+						opacity: '0',
+						transform: 'translateY(10px)'
+					},
+					'100%': {
+						opacity: '1',
+						transform: 'translateY(0)'
+					}
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.5s ease-out'
 			}
 		}
 	},
