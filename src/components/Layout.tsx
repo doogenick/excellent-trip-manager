@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { Calendar, FileText, Home, Plus, Search, Send, Settings, Users } from "lucide-react";
+import { Calendar, FileText, Home, Plus, Search, Send, Settings, Truck, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ export default function Layout({ children }: LayoutProps) {
     { icon: Home, label: "Dashboard", path: "/" },
     { icon: FileText, label: "Quotes", path: "/quotes" },
     { icon: Calendar, label: "Bookings", path: "/bookings" },
+    { icon: Truck, label: "Confirmed Tours", path: "/confirmed-tours" },
     { icon: Users, label: "Clients & Agents", path: "/clients" },
     { icon: Settings, label: "Settings", path: "/settings" },
   ];
@@ -27,8 +28,8 @@ export default function Layout({ children }: LayoutProps) {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <Sidebar
-          defaultCollapsed={false}
           collapsible="icon"
+          collapsed={collapsed}
           onCollapsedChange={setCollapsed}
         >
           <SidebarHeader className="flex h-14 items-center border-b px-4">
@@ -86,6 +87,7 @@ export default function Layout({ children }: LayoutProps) {
                 {location.pathname.startsWith("/quotes/") && 
                   location.pathname !== "/quotes/new" && "Quote Details"}
                 {location.pathname === "/bookings" && "Bookings"}
+                {location.pathname === "/confirmed-tours" && "Confirmed Tours"}
                 {location.pathname === "/clients" && "Clients & Agents"}
                 {location.pathname === "/settings" && "Settings"}
               </div>

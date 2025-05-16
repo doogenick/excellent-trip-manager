@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { QuoteType } from "@/types";
+import { PriceCalculator } from "./PriceCalculator";
 
 const quoteTypes: QuoteType[] = [
   "Truck Rental",
@@ -40,11 +41,14 @@ export function QuoteWizard() {
   const [adults, setAdults] = useState("2");
   const [children, setChildren] = useState("0");
   const [notes, setNotes] = useState("");
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [perPersonPrice, setPerPersonPrice] = useState(0);
   
   const steps = [
     "Client Information",
     "Trip Details",
     "Passengers",
+    "Price Calculator",
     "Review"
   ];
   
@@ -65,6 +69,11 @@ export function QuoteWizard() {
   const handleCreateQuote = () => {
     toast.success("Quote created successfully!");
     navigate("/quotes");
+  };
+  
+  const handlePriceChange = (total: number, perPerson: number) => {
+    setTotalPrice(total);
+    setPerPersonPrice(perPerson);
   };
   
   const isNextDisabled = () => {
@@ -325,6 +334,21 @@ export function QuoteWizard() {
           
           {activeStep === 3 && (
             <div className="space-y-6">
+              <PriceCalculator 
+                baseVehicleCost={3000}
+                baseServicesCost={1000}
+                minPassengers={parseInt(adults) + parseInt(children)}
+                maxPassengers={16}
+                initialPassengers={parseInt(adults) + parseInt(children)}
+                initialVehicleMarkup={15}
+                initialServicesMarkup={20}
+                onPriceChange={handlePriceChange}
+              />
+            </div>
+          )}
+          
+          {activeStep === 4 && (
+            <div className="space-y-6">
               <h3 className="text-lg font-medium">Review Quote Details</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -374,6 +398,14 @@ export function QuoteWizard() {
                 <div className="space-y-2">
                   <div className="text-sm font-medium">Notes</div>
                   <div className="text-sm">{notes || "No additional notes"}</div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Price Details</div>
+                  <div>
+                    <div className="font-bold">Total: ${totalPrice.toLocaleString()}</div>
+                    <div>Per Person: ${perPersonPrice.toLocaleString()}</div>
+                  </div>
                 </div>
               </div>
               

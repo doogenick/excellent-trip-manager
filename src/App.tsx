@@ -12,6 +12,7 @@ import QuoteDetailPage from "./pages/QuoteDetailPage";
 import BookingsPage from "./pages/BookingsPage";
 import ClientsAgentsPage from "./pages/ClientsAgentsPage";
 import SettingsPage from "./pages/SettingsPage";
+import ConfirmedToursPage from "./pages/ConfirmedToursPage";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/bookings" element={<BookingsPage />} />
           <Route path="/clients" element={<ClientsAgentsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/confirmed-tours" element={<ConfirmedToursPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
