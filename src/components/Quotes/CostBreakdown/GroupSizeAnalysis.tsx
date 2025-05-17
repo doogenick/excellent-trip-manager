@@ -30,15 +30,19 @@ export function GroupSizeAnalysis({
     const costs = [];
     for (let pax = minPax; pax <= maxPax; pax++) {
       const fixedCostsPerPerson = calculateFixedCosts() / pax;
-      const variableCosts = (calculateAccommodationCost() / currentPax) + 
-                          (calculateActivityCost() / currentPax) + 
-                          (calculateMealCost() / currentPax) +
-                          (calculateParkFeesCost() / currentPax);
+      const accommodationCost = (calculateAccommodationCost() / currentPax);
+      const activityCost = (calculateActivityCost() / currentPax);
+      const mealCost = (calculateMealCost() / currentPax);
+      const parkFeesCost = (calculateParkFeesCost() / currentPax);
+      
+      const variableCosts = accommodationCost + activityCost + mealCost + parkFeesCost;
       
       costs.push({
         pax,
         totalCost: fixedCostsPerPerson + variableCosts,
-        dailyCost: (fixedCostsPerPerson + variableCosts) / tourDuration
+        dailyCost: (fixedCostsPerPerson + variableCosts) / tourDuration,
+        fixedCost: fixedCostsPerPerson,
+        variableCost: variableCosts
       });
     }
     return costs;
@@ -112,10 +116,12 @@ export function GroupSizeAnalysis({
               maxPax
             ].map((pax) => {
               const fixedCostsPerPerson = calculateFixedCosts() / pax;
-              const variableCosts = (calculateAccommodationCost() / currentPax) + 
-                                    (calculateActivityCost() / currentPax) + 
-                                    (calculateMealCost() / currentPax) +
-                                    (calculateParkFeesCost() / currentPax);
+              const accommodationCost = (calculateAccommodationCost() / currentPax);
+              const activityCost = (calculateActivityCost() / currentPax);
+              const mealCost = (calculateMealCost() / currentPax);
+              const parkFeesCost = (calculateParkFeesCost() / currentPax);
+              
+              const variableCosts = accommodationCost + activityCost + mealCost + parkFeesCost;
               
               const totalPerPerson = fixedCostsPerPerson + variableCosts;
               const dailyCostPerPerson = totalPerPerson / tourDuration;
