@@ -7,8 +7,8 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { Link } from "react-router-dom";
 
@@ -46,12 +46,12 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link to={item.url}>
+                  <Link to={item.url}>
+                    <SidebarMenuButton>
                       <item.icon className="h-4 w-4 mr-2" />
                       <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+                    </SidebarMenuButton>
+                  </Link>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

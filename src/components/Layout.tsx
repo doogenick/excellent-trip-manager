@@ -1,7 +1,7 @@
 
-import { Sidebar, SidebarContent, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { Toaster } from "./ui/toaster";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 interface LayoutProps {
   children: React.ReactNode;
