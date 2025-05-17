@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Car } from "lucide-react";
 import { vehicleTypes } from "@/hooks/useTourCalculator";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface VehicleFuelSectionProps {
   selectedVehicle: string;
@@ -16,6 +18,14 @@ interface VehicleFuelSectionProps {
   calculateVehicleCost: () => number;
   calculateFuelCost: () => number;
   currentPax: number;
+  customVehicleName: string;
+  setCustomVehicleName: (value: string) => void;
+  customDailyRate: number;
+  setCustomDailyRate: (value: number) => void;
+  customFuelConsumption: number;
+  setCustomFuelConsumption: (value: number) => void;
+  vehicleNotes: string;
+  setVehicleNotes: (value: string) => void;
 }
 
 export function VehicleFuelSection({
@@ -27,7 +37,15 @@ export function VehicleFuelSection({
   setFuelPrice,
   calculateVehicleCost,
   calculateFuelCost,
-  currentPax
+  currentPax,
+  customVehicleName,
+  setCustomVehicleName,
+  customDailyRate,
+  setCustomDailyRate,
+  customFuelConsumption,
+  setCustomFuelConsumption,
+  vehicleNotes,
+  setVehicleNotes
 }: VehicleFuelSectionProps) {
   return (
     <Card>
@@ -57,6 +75,54 @@ export function VehicleFuelSection({
             </SelectContent>
           </Select>
         </div>
+        
+        {selectedVehicle === "custom" && (
+          <div className="space-y-4 p-3 border rounded-md">
+            <div className="space-y-2">
+              <Label htmlFor="custom-name">Custom Vehicle Name</Label>
+              <Input 
+                id="custom-name"
+                value={customVehicleName}
+                onChange={(e) => setCustomVehicleName(e.target.value)}
+                placeholder="Enter vehicle name"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2">
+                <Label htmlFor="custom-rate">Daily Rate ($)</Label>
+                <Input 
+                  id="custom-rate"
+                  type="number"
+                  min={0}
+                  value={customDailyRate}
+                  onChange={(e) => setCustomDailyRate(Number(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="custom-fuel">Fuel Consumption (km/l)</Label>
+                <Input 
+                  id="custom-fuel"
+                  type="number"
+                  min={0.1}
+                  step={0.1}
+                  value={customFuelConsumption}
+                  onChange={(e) => setCustomFuelConsumption(Number(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="vehicle-notes">Notes</Label>
+              <Textarea 
+                id="vehicle-notes"
+                value={vehicleNotes}
+                onChange={(e) => setVehicleNotes(e.target.value)}
+                placeholder="Add any special notes about this vehicle"
+              />
+            </div>
+          </div>
+        )}
         
         <div className="space-y-2">
           <div className="flex justify-between">

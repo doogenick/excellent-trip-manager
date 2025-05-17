@@ -13,16 +13,26 @@ interface CrewMember {
   mealAllowance: number;
 }
 
+interface CrewMealRates {
+  breakfast: number;
+  lunch: number;
+  dinner: number;
+}
+
 interface CrewSectionProps {
   crew: CrewMember[];
   setCrew: (crew: CrewMember[]) => void;
   calculateCrewCost: () => number;
+  crewMealRates?: CrewMealRates;
+  setCrewMealRates?: (rates: CrewMealRates) => void;
 }
 
 export function CrewSection({
   crew,
   setCrew,
-  calculateCrewCost
+  calculateCrewCost,
+  crewMealRates,
+  setCrewMealRates
 }: CrewSectionProps) {
   return (
     <Card>
@@ -108,6 +118,53 @@ export function CrewSection({
           >
             Add Crew Member
           </Button>
+        )}
+        
+        {crewMealRates && setCrewMealRates && (
+          <div className="p-3 border rounded-md space-y-2 mt-4">
+            <Label>Crew Meal Rates</Label>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <Label htmlFor="crew-breakfast">Breakfast</Label>
+                <Input
+                  id="crew-breakfast"
+                  type="number"
+                  min={0}
+                  value={crewMealRates.breakfast}
+                  onChange={(e) => setCrewMealRates({
+                    ...crewMealRates,
+                    breakfast: Number(e.target.value) || 0
+                  })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="crew-lunch">Lunch</Label>
+                <Input
+                  id="crew-lunch"
+                  type="number"
+                  min={0}
+                  value={crewMealRates.lunch}
+                  onChange={(e) => setCrewMealRates({
+                    ...crewMealRates,
+                    lunch: Number(e.target.value) || 0
+                  })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="crew-dinner">Dinner</Label>
+                <Input
+                  id="crew-dinner"
+                  type="number"
+                  min={0}
+                  value={crewMealRates.dinner}
+                  onChange={(e) => setCrewMealRates({
+                    ...crewMealRates,
+                    dinner: Number(e.target.value) || 0
+                  })}
+                />
+              </div>
+            </div>
+          </div>
         )}
         
         <div className="flex justify-between text-sm pt-2 border-t">

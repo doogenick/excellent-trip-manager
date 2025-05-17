@@ -12,6 +12,7 @@ interface GroupSizeAnalysisProps {
   calculateActivityCost: () => number;
   calculateMealCost: () => number;
   tourDuration: number;
+  calculateParkFeesCost?: () => number;
 }
 
 export function GroupSizeAnalysis({
@@ -22,7 +23,8 @@ export function GroupSizeAnalysis({
   calculateAccommodationCost,
   calculateActivityCost,
   calculateMealCost,
-  tourDuration
+  tourDuration,
+  calculateParkFeesCost = () => 0
 }: GroupSizeAnalysisProps) {
   const calculateCostsByGroupSize = () => {
     const costs = [];
@@ -30,7 +32,8 @@ export function GroupSizeAnalysis({
       const fixedCostsPerPerson = calculateFixedCosts() / pax;
       const variableCosts = (calculateAccommodationCost() / currentPax) + 
                           (calculateActivityCost() / currentPax) + 
-                          (calculateMealCost() / currentPax);
+                          (calculateMealCost() / currentPax) +
+                          (calculateParkFeesCost() / currentPax);
       
       costs.push({
         pax,
@@ -111,7 +114,8 @@ export function GroupSizeAnalysis({
               const fixedCostsPerPerson = calculateFixedCosts() / pax;
               const variableCosts = (calculateAccommodationCost() / currentPax) + 
                                     (calculateActivityCost() / currentPax) + 
-                                    (calculateMealCost() / currentPax);
+                                    (calculateMealCost() / currentPax) +
+                                    (calculateParkFeesCost() / currentPax);
               
               const totalPerPerson = fixedCostsPerPerson + variableCosts;
               const dailyCostPerPerson = totalPerPerson / tourDuration;
