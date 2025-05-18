@@ -115,13 +115,21 @@ describe('QuoteWizard Integration', () => {
     const adultsInput = screen.getByLabelText(/number of adults/i);
     fireEvent.change(adultsInput, { target: { value: '0' } });
     fireEvent.blur(adultsInput);
+
+    // Wait for validation to fail and button to be disabled
     await waitFor(() => {
+      expect(screen.getByText(/at least one adult is required/i)).toBeInTheDocument();
       expect(passengersFinalNextBtn).toBeDisabled();
-    });
+    }, { timeout: 1000 });
 
     // Set adults to 2 (valid)
     fireEvent.change(adultsInput, { target: { value: '2' } });
     fireEvent.blur(adultsInput);
+
+    // Wait for adult validation error to disappear
+    await waitFor(() => {
+      expect(screen.queryByText(/at least one adult is required/i)).not.toBeInTheDocument();
+    }, { timeout: 1000 });
 
     // Explicitly set children to 0 (valid)
     const childrenInput = screen.getByLabelText(/number of children/i);
