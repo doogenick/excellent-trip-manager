@@ -660,5 +660,3 @@ export function QuoteDetail() {
     </>
   );
 }
-
-import { cn } from "@/lib/utils";
