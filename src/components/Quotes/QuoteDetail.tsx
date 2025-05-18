@@ -1,13 +1,25 @@
-
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { cn } from "@/lib/utils";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useParams, useNavigate } from "react-router-dom";
 import { getQuoteById } from "@/data/mockData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { QuoteStatus } from "@/types";
-import { Edit, FileText, Send, Trash, Calendar, Users } from "lucide-react";
+import { QuoteStatus, ItineraryItem } from "@/types";
+import { Edit, FileText, Send, Trash, Calendar, Users, Info } from "lucide-react";
+import { useTourCalculator } from "@/hooks/useTourCalculator";
+import { ProfitReview } from "./ProfitReview";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
@@ -31,6 +43,40 @@ export function QuoteDetail() {
   const navigate = useNavigate();
   const quote = getQuoteById(id || "");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Calculate total passengers
+  const totalPassengers = useMemo(() => {
+    if (!quote) return 0;
+    return (quote.passengers?.adults || 0) + (quote.passengers?.children || 0);
+  }, [quote]);
+  
+  // Calculate base rate (simplified - adjust based on your pricing logic)
+  const baseRate = useMemo(() => {
+    if (!quote) return 0;
+    // This is a simplified calculation - adjust based on your pricing logic
+    return quote.totalCost / (quote.itinerary?.length || 1) / Math.max(1, totalPassengers);
+  }, [quote, totalPassengers]);
+  
+  // Use the tour calculator hook
+  const { profitReview } = useTourCalculator(
+    quote?.itinerary || [],
+    totalPassengers,
+    baseRate,
+    {
+      pax: totalPassengers,
+      minProfitPerDay: 1200,
+      fuelInTotal: 15956,
+      fuelOutTotal: 9372,
+      currencyRate: 1.0,
+    }
+  );
+  
+  // Simulate loading state
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
   
   if (!quote) {
     return <div className="p-8 text-center">Quote not found</div>;
@@ -59,7 +105,269 @@ export function QuoteDetail() {
   
   return (
     <>
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-8">
+        {isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-64" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-32" />
+              ))}
+            </div>
+            <Skeleton className="h-64" />
+          </div>
+        ) : (
+          <div className="space-y-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-bold flex items-center gap-2">
+                  {quote.quoteNumber}
+                  <Badge className={getStatusBadgeColor(quote.status)}>
+                    {quote.status.charAt(0).toUpperCase() + quote.status.slice(1)}
+                  </Badge>
+                </h1>
+                <p className="text-muted-foreground">{quote.type}</p>
+              </div>
+              
+              <div className="flex flex-wrap gap-2">
+                {quote.status === "draft" && (
+                  <>
+                    <Button variant="outline" onClick={handleEdit}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button onClick={handleSendQuote}>
+                      <Send className="h-4 w-4 mr-2" />
+                      Send Quote
+                    </Button>
+                  </>
+                )}
+                
+                {quote.status === "sent" && (
+                  <>
+                    <Button variant="outline" onClick={handleEdit}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button onClick={handleSendQuote}>
+                      <Send className="h-4 w-4 mr-2" />
+                      Resend Quote
+                    </Button>
+                  </>
+                )}
+                
+                {quote.status === "confirmed" && (
+                  <Button onClick={handleCreateBooking} className="bg-savanna-500 hover:bg-savanna-600">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Create Booking
+                  </Button>
+                )}
+                
+                <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
+                  <Trash className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </div>
+            </div>
+            
+            {/* Profit Review Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-bold">Profit Analysis</h2>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[300px]">
+                      <p>This section shows the financial breakdown of the quote, including revenue, expenses, and profit margins.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              
+              {quote?.itinerary?.length > 0 ? (
+                <ProfitReview 
+                  summary={profitReview} 
+                  className="border rounded-lg p-4 bg-card"
+                />
+              ) : (
+                <div className="text-center p-8 border rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground">
+                    Add itinerary items to see profit analysis
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            {/* Trip Details Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Client</CardDescription>
+                  <CardTitle className="text-lg">{quote.clientAgent.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    {quote.clientAgent.email}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {quote.clientAgent.phone}
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Trip Duration</CardDescription>
+                  <CardTitle className="text-lg">{duration} days</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    {quote.travelDates.startDate.toLocaleDateString()} - {quote.travelDates.endDate.toLocaleDateString()}
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Passengers</CardDescription>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    <CardTitle className="text-lg">{totalPassengers}</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    {quote.passengers.adults} Adults, {quote.passengers.children} Children
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Itinerary Section */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Itinerary</h2>
+              {quote.itinerary.length > 0 ? (
+                <div className="space-y-4">
+                  {quote.itinerary.map((day) => (
+                    <Card key={day.id}>
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="text-lg font-semibold">Day {day.day}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {day.date.toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="mb-2">{day.description}</p>
+                        {day.accommodation && (
+                          <p className="text-sm text-muted-foreground">
+                            <span className="font-medium">Accommodation:</span> {day.accommodation}
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center p-8 border rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground">No itinerary items added yet</p>
+                </div>
+              )}
+            </div>
+            
+            {/* Cost Breakdown Section */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Cost Breakdown</h2>
+              <Card>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Item</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {quote.costItems.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell>{item.description}</TableCell>
+                          <TableCell className="text-right">
+                            {quote.currency} {item.amount.toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      <TableRow className="font-medium">
+                        <TableCell>Total</TableCell>
+                        <TableCell className="text-right">
+                          {quote.currency} {quote.totalCost.toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this quote and all its data. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Quote
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+            </div>
+            
+            {/* Profit Review Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-bold">Profit Analysis</h2>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[300px]">
+                      <p>This section shows the financial breakdown of the quote, including revenue, expenses, and profit margins.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              
+              {quote?.itinerary?.length > 0 ? (
+                <ProfitReview 
+                  summary={profitReview} 
+                  className="border rounded-lg p-4 bg-card"
+                />
+              ) : (
+                <div className="text-center p-8 border rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground">
+                    Add itinerary items to see profit analysis
+                  </p>
+                </div>
+              )}
+            </div>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -104,12 +412,29 @@ export function QuoteDetail() {
                 Create Booking
               </Button>
             )}
-            
-            <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
-              <Trash className="h-4 w-4 mr-2" />
-              Delete
-            </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[300px]">
+                  <p>This section shows the financial breakdown of the quote, including revenue, expenses, and profit margins.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
+          
+          {quote?.itinerary?.length > 0 ? (
+            <ProfitReview 
+              summary={profitReview} 
+              className="border rounded-lg p-4 bg-card"
+            />
+          ) : (
+            <div className="text-center p-8 border rounded-lg bg-muted/50">
+              <p className="text-muted-foreground">
+                Add itinerary items to see profit analysis
+              </p>
+            </div>
+          )}
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -336,32 +661,4 @@ export function QuoteDetail() {
   );
 }
 
-// Helper Table components for the costs tab
-const Table = ({ children }: { children: React.ReactNode }) => (
-  <div className="w-full overflow-auto">
-    <table className="w-full caption-bottom text-sm">{children}</table>
-  </div>
-);
-
-const TableHeader = ({ children }: { children: React.ReactNode }) => (
-  <thead className="[&_tr]:border-b">{children}</thead>
-);
-
-const TableBody = ({ children }: { children: React.ReactNode }) => (
-  <tbody className="[&_tr:last-child]:border-0">{children}</tbody>
-);
-
-const TableRow = ({ className, ...props }: React.HTMLAttributes<HTMLTableRowElement>) => (
-  <tr className={cn("border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted", className)} {...props} />
-);
-
-const TableHead = ({ className, ...props }: React.ThHTMLAttributes<HTMLTableCellElement>) => (
-  <th className={cn("h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0", className)} {...props} />
-);
-
-const TableCell = ({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) => (
-  <td className={cn("p-4 align-middle [&:has([role=checkbox])]:pr-0", className)} {...props} />
-);
-
-// Add cn helper function since we're using it
 import { cn } from "@/lib/utils";

@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 
 function getStatusBadgeColor(status: QuoteStatus) {
   switch (status) {
@@ -57,9 +57,15 @@ export function QuotesList() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>All Quotes</CardTitle>
-        <CardDescription>Manage and view all your quotes</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>All Quotes</CardTitle>
+          <CardDescription>Manage and view all your quotes</CardDescription>
+        </div>
+        <Button onClick={() => navigate('/quotes/new')}>
+          <Plus className="mr-2 h-4 w-4" />
+          New Quote
+        </Button>
 
         <div className="flex flex-col sm:flex-row gap-4 mt-4">
           <div className="relative flex-1">

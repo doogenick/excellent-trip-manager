@@ -13,6 +13,11 @@ import { mockDestinations } from "@/data/mockData";
 import { QuoteType } from "@/types";
 import { toast } from "sonner";
 
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
+import { tripDetailsSchema, TripDetailsSchema } from "../quoteWizardSchemas";
+
 interface TripDetailsStepProps {
   quoteType: QuoteType | "";
   setQuoteType: (value: QuoteType) => void;
@@ -22,6 +27,7 @@ interface TripDetailsStepProps {
   setEndDate: (date: Date | undefined) => void;
   selectedDestinations: string[];
   setSelectedDestinations: (destinations: string[]) => void;
+  onValidChange?: (isValid: boolean) => void;
 }
 
 const quoteTypes: QuoteType[] = [
@@ -40,13 +46,47 @@ export function TripDetailsStep({
   quoteType, setQuoteType, 
   startDate, setStartDate, 
   endDate, setEndDate, 
-  selectedDestinations, setSelectedDestinations 
+  selectedDestinations, setSelectedDestinations,
+  onValidChange
 }: TripDetailsStepProps) {
+  const {
+    setValue,
+    formState: { errors, isValid },
+    trigger,
+  } = useForm<TripDetailsSchema>({
+    resolver: zodResolver(tripDetailsSchema),
+    mode: "onChange",
+    defaultValues: {
+      quoteType: quoteType || "",
+      startDate,
+      endDate,
+      selectedDestinations,
+    },
+  });
+
+  // Keep form state in sync with wizard state
+  useEffect(() => {
+    setValue("quoteType", quoteType || "");
+    setValue("startDate", startDate);
+    setValue("endDate", endDate);
+    setValue("selectedDestinations", selectedDestinations);
+    trigger();
+  }, [quoteType, startDate, endDate, selectedDestinations, setValue, trigger]);
+
+  // Notify wizard of validity
+  useEffect(() => {
+    if (onValidChange) onValidChange(isValid);
+  }, [isValid, onValidChange]);
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="quote-type">Quote Type</Label>
-        <Select value={quoteType} onValueChange={(value) => setQuoteType(value as QuoteType)}>
+        <Select value={quoteType} onValueChange={(value) => {
+          setQuoteType(value as QuoteType);
+          setValue("quoteType", value as QuoteType);
+          trigger();
+        }}>
           <SelectTrigger id="quote-type">
             <SelectValue placeholder="Select quote type" />
           </SelectTrigger>
@@ -56,6 +96,9 @@ export function TripDetailsStep({
             ))}
           </SelectContent>
         </Select>
+        {errors.quoteType && (
+          <div className="text-destructive text-xs mt-1">{errors.quoteType.message}</div>
+        )}
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -69,6 +112,10 @@ export function TripDetailsStep({
                   "w-full justify-start text-left font-normal",
                   !startDate && "text-muted-foreground"
                 )}
+                onClick={() => {
+                  setValue("startDate", startDate);
+                  trigger();
+                }}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {startDate ? format(startDate, "PPP") : "Pick a start date"}
@@ -78,11 +125,18 @@ export function TripDetailsStep({
               <Calendar
                 mode="single"
                 selected={startDate}
-                onSelect={setStartDate}
+                onSelect={(date) => {
+                  setStartDate(date);
+                  setValue("startDate", date);
+                  trigger();
+                }}
                 initialFocus
               />
             </PopoverContent>
           </Popover>
+          {errors.startDate && (
+            <div className="text-destructive text-xs mt-1">{errors.startDate.message}</div>
+          )}
         </div>
         
         <div className="space-y-2">
@@ -95,6 +149,10 @@ export function TripDetailsStep({
                   "w-full justify-start text-left font-normal",
                   !endDate && "text-muted-foreground"
                 )}
+                onClick={() => {
+                  setValue("endDate", endDate);
+                  trigger();
+                }}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {endDate ? format(endDate, "PPP") : "Pick an end date"}

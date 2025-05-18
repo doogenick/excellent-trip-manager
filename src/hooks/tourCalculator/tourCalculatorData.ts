@@ -1,5 +1,5 @@
 
-import { VehicleType, CrewRole, RoomType, MealBasisOption } from './types';
+import { VehicleType, CrewRole, RoomType, MealBasisOption, SeasonalAdjustment } from './types';
 
 // Vehicle types with their properties
 export const vehicleTypes: VehicleType[] = [
@@ -19,19 +19,157 @@ export const crewRoles: CrewRole[] = [
 
 // Room types with their properties
 export const roomTypes: RoomType[] = [
-  { id: "single", name: "Single Room", baseMultiplier: 1.5 },
-  { id: "double", name: "Double/Twin Room", baseMultiplier: 1.0 },
-  { id: "triple", name: "Triple Room", baseMultiplier: 0.85 },
-  { id: "family", name: "Family Room", baseMultiplier: 0.75 },
-  { id: "dorm", name: "Dormitory", baseMultiplier: 0.5 },
-  { id: "camping", name: "Camping", baseMultiplier: 0.3 }
+  {
+    id: "single",
+    name: "Single Room",
+    baseMultiplier: 1.5,
+    seasonalAdjustments: [
+      {
+        name: "Peak Season",
+        multiplier: 1.2,
+        startDate: "06-01",
+        endDate: "09-30",
+        priority: 1
+      },
+      {
+        name: "Low Season",
+        multiplier: 0.9,
+        startDate: "01-01",
+        endDate: "03-31",
+        priority: 1
+      }
+    ]
+  },
+  {
+    id: "double",
+    name: "Double/Twin Room",
+    baseMultiplier: 1.0,
+    seasonalAdjustments: [
+      {
+        name: "Peak Season",
+        multiplier: 1.15,
+        startDate: "06-01",
+        endDate: "09-30",
+        priority: 1
+      },
+      {
+        name: "Low Season",
+        multiplier: 0.95,
+        startDate: "01-01",
+        endDate: "03-31",
+        priority: 1
+      }
+    ]
+  },
+  {
+    id: "triple",
+    name: "Triple Room",
+    baseMultiplier: 0.85,
+    seasonalAdjustments: [
+      {
+        name: "Peak Season",
+        multiplier: 1.1,
+        startDate: "06-01",
+        endDate: "09-30",
+        priority: 1
+      }
+    ]
+  },
+  {
+    id: "family",
+    name: "Family Room",
+    baseMultiplier: 0.75,
+    seasonalAdjustments: [
+      {
+        name: "Peak Season",
+        multiplier: 1.1,
+        startDate: "06-01",
+        endDate: "09-30",
+        priority: 1
+      }
+    ]
+  },
+  {
+    id: "dorm",
+    name: "Dormitory",
+    baseMultiplier: 0.5,
+    seasonalAdjustments: []
+  },
+  {
+    id: "camping",
+    name: "Camping",
+    baseMultiplier: 0.3,
+    seasonalAdjustments: []
+  }
 ];
 
 // Meal basis options
 export const mealBasisOptions: MealBasisOption[] = [
-  { id: "ro", name: "Room Only", costMultiplier: 0.0, display: "RO" },
-  { id: "bb", name: "Bed & Breakfast", costMultiplier: 0.15, display: "B&B" },
-  { id: "hb", name: "Half Board", costMultiplier: 0.35, display: "HB" },
-  { id: "fb", name: "Full Board", costMultiplier: 0.5, display: "FB" },
-  { id: "ai", name: "All Inclusive", costMultiplier: 0.75, display: "AI" }
+  {
+    id: "ro",
+    name: "Room Only",
+    costMultiplier: 0.0,
+    display: "RO",
+    seasonalAdjustments: []
+  },
+  {
+    id: "bb",
+    name: "Bed & Breakfast",
+    costMultiplier: 0.15,
+    display: "B&B",
+    seasonalAdjustments: [
+      {
+        name: "Peak Season",
+        multiplier: 1.1,
+        startDate: "06-01",
+        endDate: "09-30",
+        priority: 1
+      }
+    ]
+  },
+  {
+    id: "hb",
+    name: "Half Board",
+    costMultiplier: 0.35,
+    display: "HB",
+    seasonalAdjustments: [
+      {
+        name: "Peak Season",
+        multiplier: 1.1,
+        startDate: "06-01",
+        endDate: "09-30",
+        priority: 1
+      }
+    ]
+  },
+  {
+    id: "fb",
+    name: "Full Board",
+    costMultiplier: 0.5,
+    display: "FB",
+    seasonalAdjustments: [
+      {
+        name: "Peak Season",
+        multiplier: 1.1,
+        startDate: "06-01",
+        endDate: "09-30",
+        priority: 1
+      }
+    ]
+  },
+  {
+    id: "ai",
+    name: "All Inclusive",
+    costMultiplier: 0.75,
+    display: "AI",
+    seasonalAdjustments: [
+      {
+        name: "Peak Season",
+        multiplier: 1.1,
+        startDate: "06-01",
+        endDate: "09-30",
+        priority: 1
+      }
+    ]
+  }
 ];

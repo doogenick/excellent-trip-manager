@@ -83,14 +83,30 @@ export const calculateAccommodationCost = (
   const roomMultiplier = roomMultipliers[selectedRoomType] || 1.0; 
   const mealMultiplier = mealMultipliers[selectedMealBasis] || 0.0;
   
-  // Calculate adjusted cost
+  // Calculate base room cost per person
   const baseRoomCost = averageAccommodationCost * roomMultiplier;
   const withMeals = baseRoomCost * (1 + mealMultiplier);
   
-  // Apply to all pax and days
-  const baseCost = withMeals * tourDuration * currentPax;
-  const markup = baseCost * (accommodationMarkup / 100);
-  return baseCost + markup;
+  // Calculate total cost based on room allocation
+  let totalCost = 0;
+  
+  // For odd number of travelers, one needs a single supplement
+  const standardRooms = Math.floor(currentPax / 2);
+  const singleSupplementNeeded = currentPax % 2 === 1;
+  
+  // Calculate cost for travelers in standard rooms
+  const standardRoomCost = withMeals * tourDuration;
+  totalCost += standardRoomCost * (standardRooms * 2); // Double the number of rooms since each room has 2 people
+  
+  // Add single supplement cost if needed
+  if (singleSupplementNeeded) {
+    // Single supplement is 50% extra on top of double occupancy rate
+    const singleSupplementRate = withMeals * 1.5; // Using the 1.5 multiplier from room type
+    totalCost += singleSupplementRate * tourDuration;
+  }
+  
+  const markup = totalCost * (accommodationMarkup / 100);
+  return totalCost + markup;
 };
 
 export const calculateCrewCost = (

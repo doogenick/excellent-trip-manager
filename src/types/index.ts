@@ -1,3 +1,15 @@
+// Seasonal Pricing Types
+export interface SeasonalAdjustment {
+  name: string;
+  multiplier: number;
+  startDate: string;
+  endDate: string;
+  priority?: number;
+}
+
+export interface SeasonalItem {
+  seasonalAdjustments?: SeasonalAdjustment[];
+}
 
 // Quote Types
 export type QuoteStatus = 'draft' | 'sent' | 'confirmed' | 'rejected';
@@ -93,6 +105,39 @@ export interface Quote {
   version: number;
 }
 
+// Profit Review Types
+export interface ExpenseCategory {
+  name: string;      // e.g. 'Truck Fixed', 'Accommodation', 'Food', etc.
+  total: number;     // total cost for that category
+}
+
+// Per-day totals for revenue, expense, profit
+export interface DayCostBreakdown {
+  date: Date;
+  revenue: number;
+  expense: number;
+  profit: number;
+}
+
+// Full profit review summary
+export interface ProfitReviewSummary {
+  // breakdown by category
+  categories: ExpenseCategory[];
+
+  // grand totals
+  totalRevenue: number;
+  totalExpense: number;
+  totalProfit: number;
+
+  // per-day detail
+  perDay: DayCostBreakdown[];
+
+  // additional checks
+  minProfitPerDay?: number;   // e.g. 1200
+  dailyFuelIn?: number;       // e.g. 15956
+  dailyFuelOut?: number;      // e.g. 9372
+}
+
 // Supplier Types
 export interface Supplier {
   id: string;
@@ -112,6 +157,6 @@ export interface SupplierRate {
   currency: string;
   validFrom: Date;
   validTo: Date;
-  seasonType?: 'high' | 'low' | 'standard';
+  seasonalAdjustments?: SeasonalAdjustment[];
   conditions?: string;
 }

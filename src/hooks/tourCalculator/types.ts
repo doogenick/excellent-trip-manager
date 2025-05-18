@@ -1,4 +1,12 @@
 
+export interface SeasonalAdjustment {
+  name: string;
+  multiplier: number;
+  startDate: string;
+  endDate: string;
+  priority?: number;
+}
+
 export interface CrewMember {
   role: string;
   dailyRate: number;
@@ -30,6 +38,7 @@ export interface RoomType {
   id: string;
   name: string;
   baseMultiplier: number;
+  seasonalAdjustments?: SeasonalAdjustment[];
 }
 
 export interface MealBasisOption {
@@ -37,4 +46,5 @@ export interface MealBasisOption {
   name: string;
   costMultiplier: number;
   display: string;
+  seasonalAdjustments?: SeasonalAdjustment[];
 }

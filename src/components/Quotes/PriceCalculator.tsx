@@ -1,12 +1,13 @@
-
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
+// DEBUG: changed from alias to relative import
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
+import { Slider } from "../ui/slider";
+import { Label } from "../ui/label";
+import { Input } from "../ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import { cn } from "../../lib/utils";
 import { ChartLine } from "lucide-react";
+import { mockCurrencyRates } from "../../data/mockCurrencyRates";
 
 interface PriceCalculatorProps {
   baseVehicleCost: number;
@@ -16,6 +17,9 @@ interface PriceCalculatorProps {
   initialPassengers: number;
   initialVehicleMarkup: number;
   initialServicesMarkup: number;
+  tourDuration: number;
+  targetCurrency?: string;
+  exchangeRates?: Record<string, number>;
   onPriceChange?: (totalPrice: number, perPersonPrice: number) => void;
 }
 
@@ -27,6 +31,9 @@ export function PriceCalculator({
   initialPassengers = 4,
   initialVehicleMarkup = 15,
   initialServicesMarkup = 20,
+  tourDuration = 7, // Default to 7 days if not provided
+  targetCurrency,
+  exchangeRates,
   onPriceChange
 }: PriceCalculatorProps) {
   const [vehicleMarkup, setVehicleMarkup] = useState(initialVehicleMarkup);
@@ -34,12 +41,19 @@ export function PriceCalculator({
   const [passengers, setPassengers] = useState(initialPassengers);
 
   const calculateVehicleCost = () => {
-    return baseVehicleCost * (1 + vehicleMarkup / 100);
+    // Vehicle cost scales with tour duration
+    const duration = tourDuration || 7; // Fallback to 7 days if not provided
+    return baseVehicleCost * duration * (1 + vehicleMarkup / 100);
   };
 
   const calculateServicesCost = () => {
-    return baseServicesCost * (1 + servicesMarkup / 100);
+    // Services cost per person per day
+    const duration = tourDuration || 7; // Fallback to 7 days if not provided
+    return baseServicesCost * duration * (1 + servicesMarkup / 100);
   };
+  
+  // Get the actual duration for display purposes
+  const displayTourDuration = tourDuration || 7;
 
   const calculateTotalCost = () => {
     return calculateVehicleCost() + calculateServicesCost() * passengers;
@@ -94,10 +108,17 @@ export function PriceCalculator({
           <div className="space-y-4">
             <div className="space-y-2">
               <div className="flex justify-between">
-                <Label htmlFor="vehicle-markup">Vehicle Markup: {vehicleMarkup}%</Label>
+                <div className="flex justify-between items-center">
+                <Label htmlFor="vehicle-markup">
+                  Vehicle Markup: {vehicleMarkup}%
+                  <span className="block text-xs text-muted-foreground font-normal">
+                    ${baseVehicleCost.toLocaleString('en-US')} × {displayTourDuration} days
+                  </span>
+                </Label>
                 <span className="text-sm font-medium">
                   ${calculateVehicleCost().toLocaleString()}
                 </span>
+              </div>
               </div>
               <Slider
                 id="vehicle-markup"
@@ -111,10 +132,17 @@ export function PriceCalculator({
             
             <div className="space-y-2">
               <div className="flex justify-between">
-                <Label htmlFor="services-markup">Services Markup: {servicesMarkup}%</Label>
+                <div className="flex justify-between items-center">
+                <Label htmlFor="services-markup">
+                  Services Markup: {servicesMarkup}%
+                  <span className="block text-xs text-muted-foreground font-normal">
+                    ${baseServicesCost.toLocaleString('en-US')} × {passengers} pax × {displayTourDuration} days
+                  </span>
+                </Label>
                 <span className="text-sm font-medium">
-                  ${calculateServicesCost().toLocaleString()} per person
+                  ${(calculateServicesCost() * passengers).toLocaleString()}
                 </span>
+              </div>
               </div>
               <Slider
                 id="services-markup"
@@ -153,13 +181,26 @@ export function PriceCalculator({
                 <span className="text-sm">Services Total:</span>
                 <span className="font-medium">${(calculateServicesCost() * passengers).toLocaleString()}</span>
               </div>
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Group Discount:</span>
+                <span>{passengers >= 6 && passengers <= 9 ? '5%' : passengers >= 10 ? '10%' : '0%'}</span>
+              </div>
+              {passengers % 2 === 1 && (
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Single Supplement:</span>
+                  <span>50% extra</span>
+                </div>
+              )}
               <div className="border-t pt-2 mt-2 flex justify-between">
                 <span className="font-medium">Total Cost:</span>
-                <span className="font-bold">${calculateTotalCost().toLocaleString()}</span>
+                <span className="font-bold">${calculateTotalCost().toLocaleString('en-US')}</span>
               </div>
               <div className="flex justify-between text-lg">
                 <span className="font-medium">Per Person:</span>
-                <span className="font-bold text-primary">${calculatePerPersonCost().toLocaleString()}</span>
+                <span className="font-bold text-primary">
+                  {targetCurrency ? `${targetCurrency} ${calculatePerPersonCost(targetCurrency, exchangeRates).toLocaleString('en-US')}` : 
+                    `$${calculatePerPersonCost().toLocaleString('en-US')}`}
+                </span>
               </div>
             </div>
           </div>

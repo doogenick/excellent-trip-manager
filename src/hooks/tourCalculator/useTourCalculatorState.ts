@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { CrewMember, CrewMealRates } from './types';
+import { CrewMember, CrewMealRates, SeasonalAdjustment } from './types';
 
 export function useTourCalculatorState() {
   // Tour basic settings
@@ -44,16 +44,57 @@ export function useTourCalculatorState() {
   const [averageActivityCost, setAverageActivityCost] = useState(50);
   const [activitiesMarkup, setActivitiesMarkup] = useState(20);
   const [includedActivities, setIncludedActivities] = useState(5);
+  const [activitiesSeasonalAdjustments, setActivitiesSeasonalAdjustments] = useState<SeasonalAdjustment[]>([
+    {
+      name: "Peak Season",
+      multiplier: 1.2,
+      startDate: "06-01",
+      endDate: "09-30",
+      priority: 1
+    },
+    {
+      name: "Low Season",
+      multiplier: 0.9,
+      startDate: "01-01",
+      endDate: "03-31",
+      priority: 1
+    }
+  ]);
   
   // Meals settings
   const [preparedMealsCost, setPreparedMealsCost] = useState(15);
   const [mealMarkup, setMealMarkup] = useState(15);
   const [includedMeals, setIncludedMeals] = useState(10); // Number of prepared meals included
+  const [travelStartDate, setTravelStartDate] = useState<Date>(new Date());
   
   // Pre/Post tour options
   const [prePostNights, setPrePostNights] = useState(2);
   const [prePostAccommodationCost, setPrePostAccommodationCost] = useState(100);
   const [prePostMarkup, setPrePostMarkup] = useState(10);
+
+  // Promo code state
+  const [promoCode, setPromoCode] = useState<string>('');
+  
+  const validatePromoCode = (code: string) => {
+    if (!code) return false;
+    
+    // Basic validation
+    if (code.length < 3 || code.length > 20) {
+      throw new Error('Promo code must be between 3 and 20 characters');
+    }
+    
+    return true;
+  };
+
+  const updatePromoCode = (newCode: string) => {
+    try {
+      validatePromoCode(newCode);
+      setPromoCode(newCode);
+    } catch (error) {
+      console.error('Invalid promo code:', error);
+      setPromoCode('');
+    }
+  };
 
   return {
     // Tour basics
@@ -111,8 +152,12 @@ export function useTourCalculatorState() {
     setActivitiesMarkup,
     includedActivities,
     setIncludedActivities,
+    activitiesSeasonalAdjustments,
+    setActivitiesSeasonalAdjustments,
 
     // Meals settings
+    travelStartDate,
+    setTravelStartDate,
     preparedMealsCost,
     setPreparedMealsCost,
     mealMarkup,
@@ -126,6 +171,10 @@ export function useTourCalculatorState() {
     prePostAccommodationCost,
     setPrePostAccommodationCost,
     prePostMarkup,
-    setPrePostMarkup
+    setPrePostMarkup,
+
+    // Promo code
+    promoCode,
+    updatePromoCode
   };
 }

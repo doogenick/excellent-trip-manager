@@ -1,7 +1,8 @@
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "../../ui/button";
+// DEBUG: changed from alias to relative import
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../ui/card";
 import { useNavigate } from "react-router-dom";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -27,7 +28,10 @@ export function QuoteWizard() {
   const [notes, setNotes] = useState("");
   const [totalPrice, setTotalPrice] = useState(0);
   const [perPersonPrice, setPerPersonPrice] = useState(0);
-  
+
+  // Track validity for each step
+  const [stepValidity, setStepValidity] = useState<boolean[]>([false, false, false]);
+
   const steps = [
     "Client Information",
     "Trip Details",
@@ -35,7 +39,7 @@ export function QuoteWizard() {
     "Price Calculator",
     "Review"
   ];
-  
+
   const handleNext = () => {
     if (activeStep < steps.length - 1) {
       setActiveStep(activeStep + 1);
@@ -43,41 +47,81 @@ export function QuoteWizard() {
       handleCreateQuote();
     }
   };
-  
+
   const handleBack = () => {
     if (activeStep > 0) {
       setActiveStep(activeStep - 1);
     }
   };
-  
+
   const handleCreateQuote = () => {
     toast.success("Quote created successfully!");
     navigate("/quotes");
   };
-  
+
   const handlePriceChange = (total: number, perPerson: number) => {
     setTotalPrice(total);
     setPerPersonPrice(perPerson);
   };
-  
+
+  // Use stepValidity to control Next button
   const isNextDisabled = () => {
-    switch (activeStep) {
-      case 0:
-        return !clientId;
-      case 1:
-        return !quoteType || !startDate || !endDate || selectedDestinations.length === 0;
-      case 2:
-        return !adults || parseInt(adults) < 1;
-      default:
-        return false;
-    }
+    if (activeStep === 0) return !stepValidity[0];
+    if (activeStep === 1) return !stepValidity[1];
+    if (activeStep === 2) return !stepValidity[2];
+    return false;
   };
-  
+
   // Props for each step component
-  const clientStepProps = { clientId, setClientId };
-  const tripStepProps = { quoteType, setQuoteType, startDate, setStartDate, endDate, setEndDate, selectedDestinations, setSelectedDestinations };
-  const passengersStepProps = { adults, setAdults, children, setChildren, notes, setNotes };
-  const priceCalculatorStepProps = { onPriceChange: handlePriceChange };
+  const clientStepProps = {
+    clientId,
+    setClientId,
+    onValidChange: (valid: boolean) => setStepValidity((prev) => {
+      if (prev[0] === valid) return prev;
+      const copy = [...prev];
+      copy[0] = valid;
+      return copy;
+    }),
+  };
+  const tripStepProps = {
+    quoteType,
+    setQuoteType,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    selectedDestinations,
+    setSelectedDestinations,
+    onValidChange: (valid: boolean) => setStepValidity((prev) => {
+      if (prev[1] === valid) return prev;
+      const copy = [...prev];
+      copy[1] = valid;
+      return copy;
+    }),
+  };
+  const passengersStepProps = {
+    adults,
+    setAdults,
+    children,
+    setChildren,
+    notes,
+    setNotes,
+    onValidChange: (valid: boolean) => setStepValidity((prev) => {
+      if (prev[2] === valid) return prev;
+      const copy = [...prev];
+      copy[2] = valid;
+      return copy;
+    }),
+  };
+  const priceCalculatorStepProps = { 
+    onPriceChange: handlePriceChange,
+    adults,
+    children,
+    quoteType: quoteType as string,
+    selectedDestinations,
+    startDate,
+    endDate
+  };
   const reviewStepProps = { 
     clientId, 
     quoteType, 
