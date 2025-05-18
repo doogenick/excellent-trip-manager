@@ -108,6 +108,7 @@ export function TripDetailsStep({
             <PopoverTrigger asChild>
               <Button
                 variant={"outline"}
+                data-testid="start-date-picker"
                 className={cn(
                   "w-full justify-start text-left font-normal",
                   !startDate && "text-muted-foreground"
@@ -145,6 +146,7 @@ export function TripDetailsStep({
             <PopoverTrigger asChild>
               <Button
                 variant={"outline"}
+                data-testid="end-date-picker"
                 className={cn(
                   "w-full justify-start text-left font-normal",
                   !endDate && "text-muted-foreground"

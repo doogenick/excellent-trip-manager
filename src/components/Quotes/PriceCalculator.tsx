@@ -59,9 +59,15 @@ export function PriceCalculator({
     return calculateVehicleCost() + calculateServicesCost() * passengers;
   };
 
-  const calculatePerPersonCost = () => {
-    const totalCost = calculateTotalCost();
-    return totalCost / passengers;
+  const calculatePerPersonCost = (currentCurrency?: string, rates?: Record<string, number>) => {
+    let totalCost = calculateTotalCost();
+    let perPersonCost = totalCost / passengers;
+
+    if (currentCurrency && rates && rates[currentCurrency]) {
+      perPersonCost = perPersonCost * rates[currentCurrency];
+    }
+    // Round to 2 decimal places for currency
+    return Math.round(perPersonCost * 100) / 100;
   };
 
   // Generate data points for price calculation across different group sizes
@@ -157,7 +163,7 @@ export function PriceCalculator({
             <div className="space-y-2">
               <div className="flex justify-between">
                 <Label htmlFor="passengers">Number of Passengers</Label>
-                <span className="text-sm font-medium">{passengers}</span>
+                <span className="text-sm font-medium" data-testid="passenger-count-display">{passengers}</span>
               </div>
               <Slider
                 id="passengers"
@@ -175,11 +181,11 @@ export function PriceCalculator({
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm">Vehicle Total:</span>
-                <span className="font-medium">${calculateVehicleCost().toLocaleString()}</span>
+                <span className="font-medium" data-testid="vehicle-total-price">${calculateVehicleCost().toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Services Total:</span>
-                <span className="font-medium">${(calculateServicesCost() * passengers).toLocaleString()}</span>
+                <span className="font-medium" data-testid="services-total-price">${(calculateServicesCost() * passengers).toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Group Discount:</span>
@@ -193,13 +199,13 @@ export function PriceCalculator({
               )}
               <div className="border-t pt-2 mt-2 flex justify-between">
                 <span className="font-medium">Total Cost:</span>
-                <span className="font-bold">${calculateTotalCost().toLocaleString('en-US')}</span>
+                <span className="font-bold" data-testid="total-cost-price">${calculateTotalCost().toLocaleString('en-US')}</span>
               </div>
               <div className="flex justify-between text-lg">
                 <span className="font-medium">Per Person:</span>
-                <span className="font-bold text-primary">
-                  {targetCurrency ? `${targetCurrency} ${calculatePerPersonCost(targetCurrency, exchangeRates).toLocaleString('en-US')}` : 
-                    `$${calculatePerPersonCost().toLocaleString('en-US')}`}
+                <span className="font-bold text-primary" data-testid="per-person-price">
+                  {targetCurrency ? `${targetCurrency} ${calculatePerPersonCost(targetCurrency, exchangeRates).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 
+                   `$${calculatePerPersonCost().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 </span>
               </div>
             </div>

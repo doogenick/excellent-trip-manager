@@ -12,9 +12,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getQuoteById } from "@/data/mockData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { QuoteStatus, ItineraryItem } from "@/types";
+import { QuoteStatus, CostItem, Quote } from "@/types";
 import { Edit, FileText, Send, Trash, Calendar, Users, Info } from "lucide-react";
 import { useTourCalculator } from "@/hooks/useTourCalculator";
 import { ProfitReview } from "./ProfitReview";
@@ -23,7 +23,209 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
+type ExtendedCostItem = CostItem & {
+  amount?: number;
+};
+
+type QuoteDetailProps = {
+  quote: Quote;
+};
+
 function getStatusBadgeColor(status: QuoteStatus) {
+  switch (status) {
+    case "draft":
+      return "bg-muted text-muted-foreground hover:bg-muted";
+    case "sent":
+      return "bg-blue-100 text-blue-800 hover:bg-blue-200";
+    case "confirmed":
+      return "bg-green-100 text-green-800 hover:bg-green-200";
+    case "rejected":
+      return "bg-red-100 text-red-800 hover:bg-red-200";
+    default:
+      return "bg-muted text-muted-foreground hover:bg-muted";
+  }
+}
+
+export function QuoteDetail() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [quote, setQuote] = useState<Quote | null>(null);
+
+  // Load quote data
+  useEffect(() => {
+    const loadQuote = async () => {
+      try {
+        if (id) {
+          const quoteData = getQuoteById(id);
+          setQuote(quoteData);
+        }
+      } catch (error) {
+        console.error("Error loading quote:", error);
+        toast.error("Failed to load quote");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadQuote();
+  }, [id]);
+
+  // Calculate total passengers
+  const totalPassengers = useMemo(() => {
+    if (!quote) return 0;
+    return (quote.passengers?.adults || 0) + (quote.passengers?.children || 0);
+  }, [quote]);
+
+  // Calculate base rate
+  const baseRate = useMemo(() => {
+    if (!quote) return 0;
+    return quote.totalCost / (quote.itinerary?.length || 1) / Math.max(1, totalPassengers);
+  }, [quote, totalPassengers]);
+
+  // Initialize profit review with default values
+  const defaultProfitReview = useMemo(() => ({
+    totalRevenue: 0,
+    totalCost: 0,
+    profit: 0,
+    profitMargin: 0,
+    profitPerDay: 0,
+    profitPerPax: 0,
+    categories: [],
+    totalExpense: 0,
+    perDay: {}
+  }), []);
+
+  // Calculate profit review
+  const { profitReview = defaultProfitReview } = useTourCalculator(
+    quote?.itinerary || [],
+    totalPassengers,
+    baseRate,
+    {
+      pax: totalPassengers,
+      minProfitPerDay: 1200,
+      fuelInTotal: 15956,
+      fuelOutTotal: 9372,
+      currencyRate: 1.0,
+    }
+  ) || { profitReview: defaultProfitReview };
+
+  // Handle edit
+  const handleEdit = () => {
+    toast.info("Edit functionality will be implemented in the next version");
+  };
+  
+  // Handle send quote
+  const handleSendQuote = () => {
+    toast.success("Quote sent successfully!");
+  };
+  
+  // Handle create booking
+  const handleCreateBooking = () => {
+    toast.info("Booking functionality will be implemented in the next version");
+  };
+  
+  // Handle delete
+  const handleDelete = () => {
+    setDeleteDialogOpen(false);
+    toast.success("Quote deleted successfully!");
+    navigate("/quotes");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-4">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+        <Skeleton className="h-64" />
+      </div>
+    );
+  }
+
+  if (!quote) {
+    return <div className="p-8 text-center">Quote not found</div>;
+  }
+
+  const duration = quote?.travelDates?.startDate && quote?.travelDates?.endDate 
+    ? Math.round(
+        (new Date(quote.travelDates.endDate).getTime() - new Date(quote.travelDates.startDate).getTime()) / 
+        (1000 * 60 * 60 * 24)
+      )
+    : 0;
+
+  return (
+    <div className="p-6 space-y-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            {quote.quoteNumber}
+            <Badge className={getStatusBadgeColor(quote.status)}>
+              {quote.status.charAt(0).toUpperCase() + quote.status.slice(1)}
+            </Badge>
+          </h1>
+          <p className="text-muted-foreground">{quote.type}</p>
+        </div>
+        
+        <div className="flex flex-wrap gap-2">
+          {quote.status === "draft" && (
+            <>
+              <Button variant="outline" onClick={handleEdit}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+              <Button onClick={handleSendQuote}>
+                <Send className="h-4 w-4 mr-2" />
+                Send Quote
+              </Button>
+            </>
+          )}
+          
+          {quote.status === "sent" && (
+            <>
+              <Button variant="outline" onClick={handleEdit}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+              <Button onClick={handleSendQuote}>
+                <Send className="h-4 w-4 mr-2" />
+                Resend Quote
+              </Button>
+            </>
+          )}
+          
+          {quote.status === "confirmed" && (
+            <Button onClick={handleCreateBooking} className="bg-savanna-500 hover:bg-savanna-600">
+              <Calendar className="h-4 w-4 mr-2" />
+              Create Booking
+            </Button>
+          )}
+          
+          <Button 
+            variant="destructive" 
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            <Trash className="h-4 w-4 mr-2" />
+            Delete
+          </Button>
+        </div>
+      </div>
+      
+      {/* Profit Review Section */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold">Profit Analysis</h2>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-[300px]">
+                <p>This section shows the financial breakdown of the quote, including revenue, expenses, and profit margins.</p>
   switch (status) {
     case "draft":
       return "bg-muted text-muted-foreground hover:bg-muted";
@@ -51,15 +253,17 @@ export function QuoteDetail() {
     return (quote.passengers?.adults || 0) + (quote.passengers?.children || 0);
   }, [quote]);
   
-  // Calculate base rate (simplified - adjust based on your pricing logic)
-  const baseRate = useMemo(() => {
-    if (!quote) return 0;
-    // This is a simplified calculation - adjust based on your pricing logic
-    return quote.totalCost / (quote.itinerary?.length || 1) / Math.max(1, totalPassengers);
-  }, [quote, totalPassengers]);
+  // Initialize profitReview with default values
+  const defaultProfitReview = useMemo(() => ({
+    totalRevenue: 0,
+    totalCost: 0,
+    profit: 0,
+    profitMargin: 0,
+    profitPerDay: 0,
+    profitPerPax: 0,
+  }), []);
   
-  // Use the tour calculator hook
-  const { profitReview } = useTourCalculator(
+  const { profitReview = defaultProfitReview } = useTourCalculator(
     quote?.itinerary || [],
     totalPassengers,
     baseRate,
@@ -70,7 +274,15 @@ export function QuoteDetail() {
       fuelOutTotal: 9372,
       currencyRate: 1.0,
     }
-  );
+  ) || { profitReview: defaultProfitReview };
+  
+  // Calculate base rate (simplified - adjust based on your pricing logic)
+  const baseRate = useMemo(() => {
+    if (!quote) return 0;
+    return quote.totalCost / (quote.itinerary?.length || 1) / Math.max(1, totalPassengers);
+  }, [quote, totalPassengers]);
+  
+
   
   // Simulate loading state
   useEffect(() => {
@@ -82,10 +294,19 @@ export function QuoteDetail() {
     return <div className="p-8 text-center">Quote not found</div>;
   }
   
-  const duration = Math.round((quote.travelDates.endDate.getTime() - quote.travelDates.startDate.getTime()) / (1000 * 60 * 60 * 24));
+  // Ensure quote has necessary properties
+  const safeQuote = {
+    ...quote,
+    passengers: quote.passengers || { adults: 0, children: 0 },
+    travelDates: quote.travelDates || { startDate: new Date(), endDate: new Date() },
+    itinerary: quote.itinerary || [],
+    passengerDetails: quote.passengerDetails || [],
+    costs: (quote.costs || []) as ExtendedCostItem[]
+  };
+  
+  const duration = Math.round((safeQuote.travelDates.endDate.getTime() - safeQuote.travelDates.startDate.getTime()) / (1000 * 60 * 60 * 24));
   
   const handleEdit = () => {
-    // Would navigate to edit page
     toast.info("Edit functionality will be implemented in the next version");
   };
   
@@ -121,16 +342,16 @@ export function QuoteDetail() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold flex items-center gap-2">
-                  {quote.quoteNumber}
-                  <Badge className={getStatusBadgeColor(quote.status)}>
-                    {quote.status.charAt(0).toUpperCase() + quote.status.slice(1)}
+                  {safeQuote.quoteNumber}
+                  <Badge className={getStatusBadgeColor(safeQuote.status)}>
+                    {safeQuote.status.charAt(0).toUpperCase() + safeQuote.status.slice(1)}
                   </Badge>
                 </h1>
-                <p className="text-muted-foreground">{quote.type}</p>
+                <p className="text-muted-foreground">{safeQuote.type}</p>
               </div>
               
               <div className="flex flex-wrap gap-2">
-                {quote.status === "draft" && (
+                {safeQuote.status === "draft" && (
                   <>
                     <Button variant="outline" onClick={handleEdit}>
                       <Edit className="h-4 w-4 mr-2" />
@@ -143,7 +364,7 @@ export function QuoteDetail() {
                   </>
                 )}
                 
-                {quote.status === "sent" && (
+                {safeQuote.status === "sent" && (
                   <>
                     <Button variant="outline" onClick={handleEdit}>
                       <Edit className="h-4 w-4 mr-2" />
@@ -156,7 +377,7 @@ export function QuoteDetail() {
                   </>
                 )}
                 
-                {quote.status === "confirmed" && (
+                {safeQuote.status === "confirmed" && (
                   <Button onClick={handleCreateBooking} className="bg-savanna-500 hover:bg-savanna-600">
                     <Calendar className="h-4 w-4 mr-2" />
                     Create Booking
@@ -315,14 +536,14 @@ export function QuoteDetail() {
           </div>
         )}
       </div>
-
+      
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this quote and all its data. This action cannot be undone.
+              This will permanently delete the quote {quote.quoteNumber}. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -337,12 +558,8 @@ export function QuoteDetail() {
         </AlertDialogContent>
       </AlertDialog>
     </>
-            </div>
-            
-            {/* Profit Review Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-bold">Profit Analysis</h2>
+  );
+}
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -437,11 +654,7 @@ export function QuoteDetail() {
           )}
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Client/Agent Information</CardTitle>
-            </CardHeader>
+
             <CardContent>
               <div className="space-y-2">
                 <div>
@@ -516,11 +729,7 @@ export function QuoteDetail() {
           </Card>
         </div>
         
-        <Tabs defaultValue="itinerary">
-          <TabsList className="grid grid-cols-3 w-full max-w-md">
-            <TabsTrigger value="itinerary">
-              <Calendar className="h-4 w-4 mr-2" />
-              Itinerary
+
             </TabsTrigger>
             <TabsTrigger value="costs">
               <FileText className="h-4 w-4 mr-2" />
@@ -615,11 +824,7 @@ export function QuoteDetail() {
             </Card>
           </TabsContent>
           
-          <TabsContent value="passengers" className="pt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Passenger Details</CardTitle>
-                <CardDescription>
+
                   {quote.passengerDetails.length === 0 
                     ? "No passenger details have been added yet"
                     : "List of passengers on this trip"}
@@ -640,11 +845,33 @@ export function QuoteDetail() {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
+            </div>
+          </div>
+        )}
       </div>
       
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the quote.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Quote
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
