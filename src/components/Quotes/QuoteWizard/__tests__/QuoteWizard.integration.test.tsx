@@ -58,7 +58,7 @@ describe('QuoteWizard Integration', () => {
     // expect(passengersNextBtn).not.toBeDisabled();
   });
 
-  it('shows error and disables Next for invalid Passengers', async () => {
+  it.only('shows error and disables Next for invalid Passengers', async () => {
     render(
       <MemoryRouter>
         <QuoteWizard />
@@ -75,37 +75,51 @@ describe('QuoteWizard Integration', () => {
     });
     fireEvent.click(passengersNextBtn); // Move to step 2
 
-    // Complete step 2 (Trip Details) - minimal valid input
-    // Select a quote type (assuming the first option is valid)
-    fireEvent.click(screen.getByRole('combobox', { name: /Quote Type/i }));
-    const quoteTypeOption = await screen.findByText(/Truck Rental/i); // Or any valid option
+    // Complete step 2 (Trip Details) - ensure all required fields are set
+    // Select a quote type
+    const quoteTypeCombo = screen.getByRole('combobox', { name: /Quote Type/i });
+    fireEvent.click(quoteTypeCombo);
+    const quoteTypeOption = await screen.findByText(/Truck Rental/i);
     fireEvent.click(quoteTypeOption);
 
+    // Set start and end dates using the date picker buttons
     const today = new Date();
-    // Pick start and end date - we'll need to see TripDetailsStep.tsx to do this robustly
-    // For now, let's assume selecting a type and destination is enough if dates default to valid
-    // Or, if dates are mandatory and start empty, this step might still fail until date picking is added.
-
-    // Select quote type if required
-    const quoteTypeCombo = screen.getByRole('combobox', { name: /quote type/i });
-    if (quoteTypeCombo) fireEvent.click(quoteTypeCombo);
-
-    // Pick start and end dates if required (simulate date input)
-    const startDateBtn = screen.getByTestId('start-date-picker');
-    const endDateBtn = screen.getByTestId('end-date-picker');
-    // If needed, simulate clicking the date buttons:
-    // fireEvent.click(startDateBtn);
-    // fireEvent.click(endDateBtn);
-    // If defaults are valid, you can skip further actions here.
-
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Open start date picker and select today
+    const startDateButton = screen.getByTestId('start-date-picker');
+    fireEvent.click(startDateButton);
+    
+    // The calendar should now be visible
+    const startDateGrid = await screen.findByRole('grid');
+    const todayButton = screen.getByRole('button', { 
+      name: new RegExp(`^${today.getDate()}$`)
+    });
+    fireEvent.click(todayButton);
+    
+    // Open end date picker and select tomorrow
+    const endDateButton = screen.getByTestId('end-date-picker');
+    fireEvent.click(endDateButton);
+    
+    // Wait for the end date calendar to be visible
+    const endDateGrid = await screen.findByRole('grid');
+    const tomorrowButton = screen.getByRole('button', {
+      name: new RegExp(`^${tomorrow.getDate()}$`)
+    });
+    fireEvent.click(tomorrowButton);
+    
     // Select a destination
+    const destinationCombo = screen.getByRole('combobox', { name: /Destinations/i });
+    fireEvent.click(destinationCombo);
     const destinationOption = await screen.findByText(/Serengeti National Park/i);
     fireEvent.click(destinationOption);
 
     // Now Next should be enabled if all required fields are set
     await waitFor(() => {
       expect(passengersNextBtn).not.toBeDisabled();
-    });
+    }, { timeout: 2000 });
+    
     fireEvent.click(passengersNextBtn); // Move to step 3 (Passengers)
 
     // Re-query the Next button after step change

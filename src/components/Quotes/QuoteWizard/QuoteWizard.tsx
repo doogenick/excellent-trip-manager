@@ -23,9 +23,14 @@ export function QuoteWizard() {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [selectedDestinations, setSelectedDestinations] = useState<string[]>([]);
-  const [adults, setAdults] = useState("2");
-  const [children, setChildren] = useState("0");
-  const [notes, setNotes] = useState("");
+  
+  // Manage passengers as a single state object
+  const [passengers, setPassengers] = useState({
+    adults: "2",
+    children: "0",
+    notes: ""
+  });
+  
   const [totalPrice, setTotalPrice] = useState(0);
   const [perPersonPrice, setPerPersonPrice] = useState(0);
 
@@ -99,13 +104,21 @@ export function QuoteWizard() {
       return copy;
     }),
   };
+  // Handle passenger field updates
+  const handlePassengerChange = (field: 'adults' | 'children' | 'notes', value: string) => {
+    setPassengers(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   const passengersStepProps = {
-    adults,
-    setAdults,
-    children,
-    setChildren,
-    notes,
-    setNotes,
+    adults: passengers.adults,
+    setAdults: (value: string) => handlePassengerChange('adults', value),
+    children: passengers.children,
+    setChildren: (value: string) => handlePassengerChange('children', value),
+    notes: passengers.notes,
+    setNotes: (value: string) => handlePassengerChange('notes', value),
     onValidChange: (valid: boolean) => setStepValidity((prev) => {
       if (prev[2] === valid) return prev;
       const copy = [...prev];
@@ -115,8 +128,8 @@ export function QuoteWizard() {
   };
   const priceCalculatorStepProps = { 
     onPriceChange: handlePriceChange,
-    adults,
-    children,
+    adults: passengers.adults,
+    children: passengers.children,
     quoteType: quoteType as string,
     selectedDestinations,
     startDate,
@@ -128,9 +141,9 @@ export function QuoteWizard() {
     startDate, 
     endDate, 
     selectedDestinations, 
-    adults, 
-    children, 
-    notes, 
+    adults: passengers.adults, 
+    children: passengers.children, 
+    notes: passengers.notes, 
     totalPrice, 
     perPersonPrice 
   };
