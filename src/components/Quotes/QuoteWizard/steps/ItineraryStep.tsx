@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ItineraryManager } from "../../ItineraryManager/ItineraryManager";
 
 interface ItineraryItem {
@@ -33,12 +33,13 @@ export function ItineraryStep({
   onItineraryChange,
   onValidChange
 }: ItineraryStepProps) {
+  
   // Automatically set validity based on whether there's at least one itinerary item
-  useState(() => {
+  useEffect(() => {
     if (onValidChange) {
       onValidChange(itinerary.length > 0);
     }
-  });
+  }, [itinerary, onValidChange]);
 
   const handleItineraryChange = (newItinerary: ItineraryItem[]) => {
     onItineraryChange(newItinerary);

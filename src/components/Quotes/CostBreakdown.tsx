@@ -13,10 +13,162 @@ import { PrePostTourSection } from "./CostBreakdown/PrePostTourSection";
 import { CostSummarySection } from "./CostBreakdown/CostSummarySection";
 import { DailyBreakdownTable } from "./CostBreakdown/DailyBreakdownTable";
 import { GroupSizeAnalysis } from "./CostBreakdown/GroupSizeAnalysis";
-import { useTourCalculator } from "@/hooks/useTourCalculator";
+import { useTourCalculatorState } from "@/hooks/tourCalculator/useTourCalculatorState";
+import { useMemo } from "react";
 
 export function CostBreakdown() {
-  const calculator = useTourCalculator();
+  // Use the state hook directly instead of the full calculator hook
+  const calculatorState = useTourCalculatorState();
+  
+  // Create calculation functions using the state
+  const calculationFunctions = useMemo(() => {
+    // Vehicle cost calculation
+    const calculateVehicleCost = () => {
+      const baseRate = calculatorState.selectedVehicle === "custom" 
+        ? calculatorState.customDailyRate 
+        : 200; // Default rate
+      const baseCost = baseRate * calculatorState.tourDuration;
+      const markup = baseCost * (calculatorState.vehicleMarkup / 100);
+      return baseCost + markup;
+    };
+
+    // Fuel cost calculation
+    const calculateFuelCost = () => {
+      const fuelConsumption = calculatorState.selectedVehicle === "custom"
+        ? calculatorState.customFuelConsumption
+        : 6; // Default consumption
+      const fuelNeeded = calculatorState.totalDistance / fuelConsumption;
+      return fuelNeeded * calculatorState.fuelPrice;
+    };
+
+    // Accommodation cost calculation
+    const calculateAccommodationCost = () => {
+      const baseCost = calculatorState.averageAccommodationCost * 
+        calculatorState.tourDuration * 
+        calculatorState.currentPax;
+      const markup = baseCost * (calculatorState.accommodationMarkup / 100);
+      return baseCost + markup;
+    };
+
+    // Crew cost calculation
+    const calculateCrewCost = () => {
+      return calculatorState.crew.reduce((total, member) => {
+        const dailyCost = member.dailyRate * calculatorState.tourDuration;
+        const accommodationCost = member.accommodationRate * calculatorState.tourDuration;
+        const mealCost = member.mealAllowance * calculatorState.tourDuration;
+        return total + dailyCost + accommodationCost + mealCost;
+      }, 0);
+    };
+
+    // Activity cost calculation
+    const calculateActivityCost = () => {
+      const baseCost = calculatorState.averageActivityCost * 
+        calculatorState.includedActivities * 
+        calculatorState.currentPax;
+      const markup = baseCost * (calculatorState.activitiesMarkup / 100);
+      return baseCost + markup;
+    };
+
+    // Meal cost calculation
+    const calculateMealCost = () => {
+      const baseCost = calculatorState.preparedMealsCost * 
+        calculatorState.includedMeals * 
+        calculatorState.currentPax;
+      const markup = baseCost * (calculatorState.mealMarkup / 100);
+      return baseCost + markup;
+    };
+
+    // Park fees calculation
+    const calculateParkFeesCost = () => {
+      const totalParkFees = calculatorState.parkFees.reduce((sum, fee) => sum + fee, 0);
+      return totalParkFees * calculatorState.currentPax;
+    };
+
+    // Pre/post tour cost calculation
+    const calculatePrePostTourCost = () => {
+      const baseCost = calculatorState.prePostAccommodationCost * calculatorState.prePostNights;
+      const markup = baseCost * (calculatorState.prePostMarkup / 100);
+      return baseCost + markup;
+    };
+
+    // Fixed costs (vehicle, fuel, crew)
+    const calculateFixedCosts = () => {
+      return calculateVehicleCost() + calculateFuelCost() + calculateCrewCost();
+    };
+
+    // Per-person costs (accommodation, activities, meals)
+    const calculatePerPersonCosts = () => {
+      return (calculateAccommodationCost() + calculateActivityCost() + calculateMealCost() + calculateParkFeesCost()) / calculatorState.currentPax;
+    };
+
+    // Total tour cost
+    const calculateTotalTourCost = () => {
+      return calculateFixedCosts() + calculateAccommodationCost() + calculateMealCost() + calculateParkFeesCost() + calculateActivityCost();
+    };
+
+    // Cost per person
+    const calculateCostPerPerson = () => {
+      return calculateTotalTourCost() / calculatorState.currentPax;
+    };
+
+    // Daily cost per person
+    const calculateDailyCostPerPerson = () => {
+      return calculateCostPerPerson() / calculatorState.tourDuration;
+    };
+
+    // Profit calculation
+    const calculateProfit = () => {
+      // Simple profit calculation - in a real app, you would have more complex logic
+      const totalCost = calculateTotalTourCost();
+      // Assume a 20% markup for profit calculation
+      return totalCost * 0.2;
+    };
+
+    return {
+      calculateVehicleCost,
+      calculateFuelCost,
+      calculateAccommodationCost,
+      calculateCrewCost,
+      calculateActivityCost,
+      calculateMealCost,
+      calculateParkFeesCost,
+      calculatePrePostTourCost,
+      calculateFixedCosts,
+      calculatePerPersonCosts,
+      calculateTotalTourCost,
+      calculateCostPerPerson,
+      calculateDailyCostPerPerson,
+      calculateProfit
+    };
+  }, [
+    calculatorState.selectedVehicle,
+    calculatorState.customDailyRate,
+    calculatorState.customFuelConsumption,
+    calculatorState.tourDuration,
+    calculatorState.vehicleMarkup,
+    calculatorState.totalDistance,
+    calculatorState.fuelPrice,
+    calculatorState.averageAccommodationCost,
+    calculatorState.currentPax,
+    calculatorState.accommodationMarkup,
+    calculatorState.crew,
+    calculatorState.averageActivityCost,
+    calculatorState.includedActivities,
+    calculatorState.activitiesMarkup,
+    calculatorState.preparedMealsCost,
+    calculatorState.includedMeals,
+    calculatorState.mealMarkup,
+    calculatorState.parkFees,
+    calculatorState.prePostAccommodationCost,
+    calculatorState.prePostNights,
+    calculatorState.prePostMarkup
+  ]);
+  
+  // Combine state and calculation functions
+  const calculator = {
+    ...calculatorState,
+    ...calculationFunctions
+  };
   
   return (
     <div className="space-y-6">
