@@ -9,7 +9,6 @@ import {
   QuoteType, 
   FITTourType, 
   GroupTourType, 
-  ServiceLevel, 
   AccommodationType, 
   MealPlan, 
   CrewMemberType, 
@@ -19,6 +18,7 @@ import {
   TrailerDetails,
   VehicleDetails 
 } from "@/types/quotes";
+import { ServiceLevel } from "@/types";
 import { WizardSteps } from "./WizardSteps";
 import { ClientInformationStep } from "./steps/ClientInformationStep";
 import { TripDetailsStep } from "./steps/TripDetailsStep";

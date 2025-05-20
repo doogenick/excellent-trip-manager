@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql" // Or "mysql", "sqlite", "sqlserver", "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Supplier {
+  SupplierID    Int      @id @default(autoincrement())
+  SupplierName  String
+  ContactPerson String?
+  ContactEmail  String?
+  ContactPhone  String?
+  Address       String?
+  Country       String?
+  SupplierType  String? // e.g., "Accommodation," "Activity," "Transport," "Guide Service"
+  Notes         String?
+  CreatedAt     DateTime @default(now())
+  UpdatedAt     DateTime @updatedAt
+
+  PropertiesActivities PropertyActivity[]
+}
+
+model PropertyActivity {
+  PropertyActivityID Int      @id @default(autoincrement())
+  SupplierID         Int
+  Name               String   // e.g., "Okaukuejo Camp - Standard Room," "Etosha Game Drive"
+  Type               String?  // e.g., "Accommodation," "Activity," "Transfer," "Permit"
+  Location           String?  // City, Region, Country
+  Description        String?
+  Notes              String?
+  CreatedAt          DateTime @default(now())
+  UpdatedAt          DateTime @updatedAt
+
+  Supplier Supplier @relation(fields: [SupplierID], references: [SupplierID])
+  Rates    Rate[]
+}
+
+model Rate {
+  RateID             Int      @id @default(autoincrement())
+  PropertyActivityID Int
+  RateType           String   // e.g., "Per Person Per Night," "Per Person Per Activity"
+  Currency           String   // e.g., "USD", "ZAR", "EUR"
+  NettRate           Float    // The actual cost you pay the supplier
+  ValidityStartDate  DateTime
+  ValidityEndDate    DateTime
+  MinimumPax         Int?
+  MaximumPax         Int?
+  Notes              String?  // e.g., "Includes breakfast," "Excludes park entry"
+  ApplicableSeason   String?  // e.g., "Peak," "Shoulder," "Off-peak"
+  CreatedAt          DateTime @default(now())
+  UpdatedAt          DateTime @updatedAt
+
+  PropertyActivity PropertyActivity @relation(fields: [PropertyActivityID], references: [PropertyActivityID])
+}

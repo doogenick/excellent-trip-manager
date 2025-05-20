@@ -1,7 +1,6 @@
-
 import { format } from "date-fns";
 import { mockClientAgents, mockDestinations } from "@/data/mockData";
-import { QuoteType } from "@/types";
+import { QuoteType } from "@/types/quotes";
 
 interface ReviewStepProps {
   clientId: string;

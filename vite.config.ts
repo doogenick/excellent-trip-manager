@@ -8,7 +8,20 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 export default defineConfig(({ mode }) => ({
   test: {
     environment: 'jsdom',
-    setupFiles: ['./vitest.setup.ts'],
+    globals: true,
+    setupFiles: ['./src/test/setup.ts'],
+    include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        '**/*.d.ts',
+        '**/types.ts',
+        '**/vite-env.d.ts',
+        '**/src/test/**',
+      ],
+    },
   },
   server: {
     host: "::",

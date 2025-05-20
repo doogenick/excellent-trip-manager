@@ -26,7 +26,7 @@ export interface CostItem {
   cost: number;
 }
 
-export type QuoteType = "standard" | "luxury" | "adventure" | "custom" | "budget";
+export type ServiceLevel = "standard" | "luxury" | "adventure" | "custom" | "budget";
 
 export interface SupplierRate {
   id: string;

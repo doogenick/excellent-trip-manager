@@ -1,0 +1,132 @@
+# 21 May 2025 - Development Status & Next Steps
+
+## CURRENT STATUS
+
+### 1. Supplier Management (COMPLETED)
+- Created components:
+  - `SupplierForm.tsx` - Form for adding/editing suppliers
+  - `SupplierList.tsx` - Table view of all suppliers
+  - `SupplierPage.tsx` - Main page component with state management
+- Backend API routes set up at `/api/suppliers`
+- Added to sidebar navigation
+- Basic CRUD operations implemented
+
+### 2. Property/Activity Management (IN PROGRESS)
+- Created:
+  - `PropertyActivityForm.tsx` - Form component (needs to be created manually)
+- Pending:
+  - `PropertyActivityList.tsx` - Table view component
+  - `PropertyActivityPage.tsx` - Main page component
+  - API integration
+
+### 3. Rate Management (NOT STARTED)
+- Components needed:
+  - `RateForm.tsx`
+  - `RateList.tsx`
+  - `RatePage.tsx`
+  - API integration
+
+## TOMORROW'S TASKS
+
+### 1. Complete Property/Activity Management
+1. Create `PropertyActivityList.tsx`
+   - Table view with columns: Name, Type, Location, Supplier, Actions
+   - Include edit/delete functionality
+   - Add search/filter capability
+
+2. Create `PropertyActivityPage.tsx`
+   - State management for properties/activities
+   - API integration with `/api/properties-activities`
+   - Handle loading/error states
+
+3. Add to sidebar navigation
+   - Add "Properties/Activities" menu item
+   - Link to `/properties-activities`
+
+### 2. Implement Rate Management
+1. Create `RateForm.tsx`
+   - Form fields for all rate properties
+   - Link to Property/Activity
+   - Date range selection
+   - Rate type selection (per person, per room, etc.)
+
+2. Create `RateList.tsx`
+   - Filterable/sortable table
+   - Group by Property/Activity
+   - Show effective date ranges
+
+3. Create `RatePage.tsx`
+   - State management
+   - API integration with `/api/rates`
+   - Handle bulk operations
+
+### 3. Enhancements (After Core Functionality)
+1. Add search/filter to all list views
+2. Implement pagination
+3. Add form validation
+4. Improve error handling and user feedback
+5. Add loading states and skeletons
+6. Implement bulk actions
+
+## EXAMPLE CODE FOR TOMORROW
+
+### PropertyActivityList.tsx
+```typescript
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Pencil, Trash2 } from 'lucide-react';
+
+interface PropertyActivityListProps {
+  properties: PropertyActivity[];
+  onEdit: (property: PropertyActivity) => void;
+  onDelete: (id: number) => void;
+}
+
+export function PropertyActivityList({ properties, onEdit, onDelete }: PropertyActivityListProps) {
+  return (
+    <div className="border rounded-md">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Location</TableHead>
+            <TableHead>Supplier</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {properties.map((property) => (
+            <TableRow key={property.PropertyActivityID}>
+              <TableCell className="font-medium">{property.Name}</TableCell>
+              <TableCell>{property.Type}</TableCell>
+              <TableCell>{property.Location}</TableCell>
+              <TableCell>Supplier ID: {property.SupplierID}</TableCell>
+              <TableCell className="text-right space-x-2">
+                <Button variant="outline" size="icon" onClick={() => onEdit(property)}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon" onClick={() => onDelete(property.PropertyActivityID)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+```
+
+## SETUP REMINDERS
+1. Ensure PostgreSQL is running
+2. Verify `.env` has correct `DATABASE_URL`
+3. Start backend: `npm run dev:server`
+4. Start frontend: `npm run dev`
+
+## NOTES
+- All new components should follow the same patterns as the Supplier components
+- Focus on functionality first, then refine UI/UX
+- Test each CRUD operation thoroughly
+- Document any issues or questions that come up

@@ -1,0 +1,615 @@
+This is an excellent strategic addition! Integrating an AI system for inbox monitoring and lead qualification can dramatically improve efficiency and response times. However, given its specialized nature and the complexity of AI/ML development, it's best positioned as a Future Enhancement (Phase 5 or beyond) after the core quoting engine and supplier/rate management are robustly in place.
+
+Here's how we'll update the implementation plan to include this AI system:
+
+Quote Builder Implementation Plan (Revised with AI Lead Management)
+Overview
+This document outlines the revised implementation strategy for the Quote Builder functionality, aiming to achieve a comprehensive, robust, and user-friendly system for generating, managing, and accurately costing tour quotes. The plan integrates the core quote wizard with powerful costing and rate management capabilities, and lays the groundwork for an AI-powered lead management system as a future enhancement.
+
+Core Components
+1. Quote Wizard
+Multi-step form for creating and editing quotes
+Progress indicator showing current step
+Save draft functionality at each step
+Form validation using Zod schemas
+2. Supplier & Rate Management Module (Prerequisite / Standalone Module)
+Supplier Database: CRUD (Create, Read, Update, Delete) interface for managing supplier details.
+Property/Activity Database: CRUD interface for managing properties and activities, linked to suppliers.
+Rate Database: Interface for managing nett rates, linked to properties/activities, including validity periods, currencies, rate types (per person, per vehicle, fixed), and min/max pax.
+Manual Rate Entry: Dedicated forms for entering and updating rates.
+Automated Rate Extraction (Future Enhancement / Advanced Phase): Consider integration with OCR/NLP solutions to process PDF/Word rate sheets into structured data for human review and import.
+3. Steps Implementation (Revised)
+a. Client & General Information
+Client selection/search (with option to create new)
+Contact details, Company information, Tax ID/VAT number
+New: Tour Type Selector (Accommodated, Camping, Self-Drive, Combo) - This will dynamically influence subsequent fields.
+Number of Paying Passengers and FOC (Free of Charge) clients.
+Quote Status: draft | sent | accepted | revision_requested | expired | converted | cancelled
+b. Itinerary & Detailed Costing (Expanded from "Trip Details" and "Services Selection")
+Day-by-Day Itinerary Builder:
+Day | Start Point | End Point | Activity | Accommodation | Type (Camping/Accommodated) | Meals (B,L,D) checkboxes.
+Daily KM Tracking: Input for KM travelled per day, and display of Total Tour KM.
+Live Search for Accommodation/Activity: As users type, suggest matching Properties_Activities from the database.
+If found: Automatically populate associated NettRate based on dates and client numbers.
+If not found: Allow manual entry of Property/Activity Name and NettRate for that specific quote, with an option to save to master database.
+Granular Cost Inputs (Dynamic based on Tour Type):
+Client Services (Per Person, Per Day): Input for Accommodation, Activities, Park Fees, and Meals (per person, per day, fetched via live search/manual entry).
+Crew Costs:
+Add multiple crew members (Driver, Guide, Cook, etc.). <!-- end list -->
+Daily Wage for each crew member.
+Days on Tour for each crew member.
+New: Crew Park Fees and Crew Activity Costs (per crew member, per day, fetched via live search/manual entry).
+Vehicle Costs:
+Select multiple vehicles (e.g., Nomad Truck, Sprinter). <!-- end list -->
+Vehicle Daily Rate, Number of Tour Days for Vehicle.
+Vehicle Collection/Delivery Fees.
+Trailer Rental Fee and Number of Days for Trailer Rental.
+Overheads (Shared):
+Tolls/Vehicle Border Fees (per day).
+Crew Accommodation Cost (per day).
+Crew Meal Budget (per day).
+Fuel Costs (if applicable to Tour Type):
+Fuel Price per Liter.
+Vehicle Fuel Consumption (KM/L).
+Start Transit KM, End Transit KM.
+Crew Relocation Costs: Specific costs for flights/travel.
+Other Costs: Array for ad-hoc tour-specific costs not covered above.
+FOC (Free of Charge) Client Calculation: Automatic calculation of FOC single supplement cost and its redistribution among paying clients.
+c. Pricing & Profitability Analysis (Expanded from "Pricing")
+Automatic Cost Aggregation: Summation of all nett costs (Client Services, Crew, Vehicle, Overheads, Fuel).
+Markup Application: Apply distinct markups:
+Markup Percentage on Vehicle Cost.
+Markup Percentage on Client Services.
+Total Tour Selling Price.
+Detailed Profit Analysis (Internal View Only):
+Display Total Expenses, Total Income, Net Profit.
+Daily Profit View.
+Sliding Scale View: Interactive graph/table showing Per Person Selling Price and Profit Margin at different client numbers (e.g., 8, 10, 12, 14, 16, 18, 20, 24).
+Margin Approval Workflow: Integrate a mechanism for management to review and approve margins before final quote generation.
+Currency selection for the quote.
+d. Review & Finalization (Refined from "Review & Confirm")
+Summary of all selections and calculated pricing.
+Inclusions & Exclusions Management: Dynamic lists generated from selected services/costs, with option for manual edits.
+Terms and conditions (pull from templates).
+Send quote options (email, PDF, link sharing).
+Save Final Quote: Archive full quote details (costing, itinerary, final price).
+Technical Implementation (Expanded)
+1. Backend Architecture (New & Core)
+Robust API Layer: Develop a comprehensive set of RESTful APIs to handle:
+CRUD operations for Quotes.
+CRUD operations for Suppliers, Properties_Activities, and Rates.
+Complex calculations for the Costing Engine.
+Live Search functionality for properties/activities (fast, indexed queries).
+Data processing for rate extraction (if implemented).
+Database Management:
+Use a relational database (e.g., PostgreSQL, MySQL) for Quotes, Suppliers, Properties_Activities, and Rates tables, ensuring relational integrity and optimized indexing.
+Implement an ORM (Object-Relational Mapping) for efficient database interactions.
+Business Logic Layer: Centralize all complex costing formulas, FOC calculations, markup applications, and dynamic rule processing.
+Authentication & Authorization: Secure API endpoints with user authentication and role-based authorization.
+2. Frontend Technology
+Choice: React, Angular, Vue.js.
+Requirements: A modern JavaScript framework for building a responsive, interactive user interface that handles real-time search, dynamic forms, complex data grids for itinerary building and rate entry.
+3. State Management (Frontend)
+Use React Context or Redux Toolkit for global state management.
+Implement useReducer for complex state logic, especially within the Itinerary & Costing step.
+Persist state to localStorage for draft functionality.
+4. Form Handling (Frontend)
+React Hook Form for efficient form state management across the wizard.
+Zod for robust schema validation, ensuring data integrity.
+Custom form components for consistent UI and reusability, especially for dynamic arrays (e.g., multiple crew members, daily itinerary rows).
+5. UI/UX
+Responsive design for all screen sizes.
+Clear loading states, error handling, and validation feedback.
+Confirmation modals for important actions (e.g., sending quote, saving draft).
+Toast notifications for user feedback.
+Interactive elements for the sliding scale profitability view.
+6. API Integration
+CRUD operations for quotes and all related costing data.
+Auto-save functionality for drafts.
+PDF generation API integration (e.g., React PDF on frontend, or a dedicated backend service for complex layouts).
+Email integration (backend service to send quotes, notifications).
+Integration with Supplier and Rate Management APIs for lookups and data persistence.
+Data Structure (Expanded)
+TypeScript
+
+interface Quote {
+  id: string;
+  status: 'draft' | 'sent' | 'accepted' | 'revision_requested' | 'expired' | 'converted' | 'cancelled';
+  quoteNumber: string;
+  client: {
+    id?: string; // Optional if new client
+    name: string;
+    email: string;
+    phone: string;
+    company?: string;
+    taxId?: string;
+  };
+  trip: {
+    type: 'Accommodated' | 'Camping' | 'Combo' | 'Self-Drive'; // Updated Trip Type
+    payingPassengers: number;
+    focClients: number;
+    segments: Array<{
+      day: number;
+      startPoint: string;
+      endPoint: string;
+      activity: string;
+      accommodationName: string; // From Properties_Activities.Name or manual
+      accommodationType: 'Camping' | 'Lodge' | 'Hotel'; // Updated
+      meals: { B: boolean; L: boolean; D: boolean; };
+      dailyKm: number;
+      // Daily Costs (per person, nett, dynamically fetched from Rates or manual)
+      clientAccommodationNettCost: number;
+      clientActivityNettCost: number;
+      clientParkFeesNettCost: number;
+      clientMealsNettCost: number; // If not part of accommodation
+      // Crew-specific daily costs
+      crewParkFeesNettCost?: number; // New
+      crewActivityNettCost?: number; // New
+      // Daily Overheads
+      tollsBorderFeesNettCost?: number;
+      crewAccommodationNettCost?: number;
+      crewMealBudgetNettCost?: number;
+    }>;
+    totalTourKm: number; // Calculated
+    notes?: string;
+  };
+  vehicles: Array<{
+    id?: string; // If from master data
+    type: string; // e.g., "Nomad Truck 1"
+    dailyRateNett: number;
+    daysOnTour: number;
+    collectionDeliveryFeeNett?: number;
+  }>;
+  trailers: Array<{ // New: separate from vehicles if needed
+    id?: string;
+    type: string;
+    rentalFeeNett: number;
+    daysOnTour: number;
+  }>;
+  crewMembers: Array<{
+    id?: string; // If from master data
+    role: string; // e.g., Driver, Guide, Cook
+    dailyWageNett: number;
+    daysOnTour: number;
+  }>;
+  fuel: {
+    pricePerLiterNett: number;
+    vehicleConsumptionKmPerLiter: number; // For primary vehicle or average if multiple
+    startTransitKm: number;
+    endTransitKm: number;
+  };
+  otherCosts: Array<{ // For ad-hoc tour-specific costs not covered above
+    description: string;
+    nettCost: number;
+    currency: string;
+  }>;
+  pricing: {
+    calculatedNettCosts: { // Detailed breakdown of nett costs
+      crewTotalNett: number;
+      vehicleTotalNett: number; // includes vehicles, trailers, fuel
+      clientServicesTotalNett: number; // accommodation, activities, park fees, meals
+      overheadsTotalNett: number; // tolls, crew accommodation, crew meals
+      crewRelocationTotalNett: number;
+      focSingleSupplementNett: number; // Calculated FOC cost
+      totalNettBeforeMarkup: number;
+    };
+    markupPercentageVehicle: number;
+    markupPercentageClientServices: number;
+    totalSellingPrice: number;
+    perPersonSellingPrice: number;
+    profitNett: number; // Total income - Total nett costs
+    profitMarginPercentage: number;
+    currency: string; // Final quote currency
+  };
+  terms: {
+    validity: number; // days
+    paymentTerms: string;
+    cancellationPolicy: string;
+    inclusions: string[]; // Dynamically generated, manually editable
+    exclusions: string[]; // Dynamically generated, manually editable
+  };
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
+  createdBy: string;
+  // Optional: field to link back to lead if AI system is implemented later
+  // leadSourceEmailId?: string;
+  // extractedLeadDetails?: any; // Store parsed data from AI
+}
+
+// Additional data structures for Rate Management (likely in separate database service)
+// interface Supplier { ... }
+// interface PropertyActivity { ... }
+// interface Rate { ... }
+Implementation Phases (Revised)
+Phase 1: Core Backend & Foundation (Weeks 1-3)
+Backend Setup: Establish backend framework, database connection, and API structure.
+Supplier & Rate Management Module (Basic):
+Implement Suppliers, Properties_Activities, and Rates database schemas.
+Develop CRUD APIs for these entities.
+Build basic UI for manual entry of suppliers, properties/activities, and rates.
+Quote Data Model & Basic APIs: Implement Quote data structure and core CRUD APIs for quotes (without full costing logic yet).
+Basic Wizard Structure: Set up React Context/Redux, React Hook Form, and Zod for the Quote Wizard.
+Client & General Information Step: Implement UI and API integration.
+Phase 2: Itinerary & Comprehensive Costing Integration (Weeks 4-7)
+Itinerary Builder UI: Develop the day-by-day itinerary grid with dynamic fields.
+Live Search Integration: Implement backend search for Properties_Activities and integrate with frontend itinerary inputs, including "not found" fallback.
+Costing Engine Development (Backend):
+Implement all granular cost calculations (Client Services, Crew, Vehicle, Overheads, Fuel).
+Develop the dynamic rule engine based on Tour Type.
+Implement FOC client calculation and cost redistribution logic.
+UI for Granular Cost Inputs: Integrate all granular cost input fields into the Itinerary step, dynamically shown/hidden based on tour type.
+Initial Cost Aggregation & Display: Connect backend costing APIs to frontend to show initial cost totals.
+Phase 3: Advanced Pricing & Quote Finalization (Weeks 8-10)
+Markup Application Logic: Implement backend logic for separate markups on vehicle and client services.
+Profitability Analysis UI:
+Develop the internal dashboard for Total Expenses, Total Income, Net Profit, Daily Profit.
+Implement the interactive Sliding Scale View.
+Integrate Margin Approval Workflow.
+Inclusions & Exclusions Management: Develop the UI and logic for dynamic lists and manual overrides.
+Review & Finalization Step: Complete summary display, terms and conditions integration.
+PDF Generation: Integrate backend service or React PDF for robust PDF quote generation.
+Email Integration: Implement sending finalized quotes via email.
+Phase 4: Polish, Optimization & Testing (Weeks 11-12)
+Comprehensive Form Validation & Error Handling: Ensure all forms have robust validation.
+Responsive Design Refinements: Ensure optimal UI across devices.
+Performance Optimization: Optimize API calls, database queries, and frontend rendering.
+Unit, Component, Integration, and E2E Testing:
+Crucial for Costing: Develop extensive unit tests for all calculation formulas.
+Develop integration tests to ensure data flows correctly between Supplier/Rate Management, Costing Engine, and Quote Builder.
+Perform thorough scenario testing (positive, negative, edge cases for all tour types).
+User Acceptance Testing (UAT): Conduct UAT with your quoting team, including parallel runs if feasible.
+Documentation: Comprehensive API documentation, user manuals, and technical documentation.
+Phase 5: Future Enhancements (Post-Core Deployment)
+AI-Powered Lead Management Module:
+
+Inbox Monitoring Integration: Connect to your email system (e.g., Gmail API, Microsoft Graph API) to monitor incoming quote requests.
+Lead Screening & Qualification (AI/ML):
+Natural Language Processing (NLP): Analyze email content to identify key entities (client name, dates, number of passengers, desired destinations/activities, budget hints, tour type preferences).
+Classification: Develop an ML model to classify leads (e.g., "High-intent," "Information Request," "Unqualified") and potentially predict conversion likelihood.
+Sentiment Analysis (Optional): Gauge the urgency or tone of the request.
+Information Extraction: Automatically pull structured data from emails into a preliminary lead record.
+Automated Response/Prioritization: Based on qualification, automatically send a polite acknowledgment, request missing info, or flag as high-priority for a human quoter.
+Seamless Handover to Quote Builder: Once a lead is qualified and key information extracted, provide a "Create Quote from Lead" option that pre-populates the "Client & General Information" and initial "Itinerary" fields in the Quote Wizard.
+Technical Requirements: Integration with email APIs, dedicated ML services/libraries (e.g., TensorFlow, PyTorch, Azure AI, Google AI Platform), robust data pipeline for training and inference.
+Automated Rate Sheet Extraction: Full implementation of OCR/NLP for automated data parsing with human validation for rate sheets.
+
+Integration with Booking System (e.g., Tour Plan): Seamless transfer of confirmed quotes to booking management.
+
+Advanced Reporting & Analytics: Beyond basic stats (e.g., conversion rates by tour type, agent performance).
+
+Mobile App Integration: Native mobile application for quoting.
+
+Audit Trails: Detailed logging of changes to quotes and rates for compliance and troubleshooting.
+
+Multi-currency Conversion Automation: Auto-update exchange rates from external sources.
+
+Supplier Portal: Allow suppliers to directly update their rates in the system (with approval workflow).
+
+Success Metrics
+Significant reduction in quote creation time.
+Decrease in user errors during quote creation (especially costing errors).
+Increased accuracy and consistency of quotes.
+Improved conversion rate from quote to booking due to faster and more accurate quotes.
+Positive user feedback on the quoting process, comprehensiveness, and ease of use.
+Reduced manual effort in managing supplier rates.
+New (for AI Phase): Reduction in manual lead screening time.
+New (for AI Phase): Faster initiation of qualified quotes due to automated information gathering.
+
+
+
+xxx xxx xxx
+
+Here's how we'll update the implementation plan to handle multiple currencies:
+
+Quote Builder Implementation Plan (Revised with Multi-Currency Support)
+Overview
+This document outlines the revised implementation strategy for the Quote Builder functionality, aiming to achieve a comprehensive, robust, and user-friendly system for generating, managing, and accurately costing tour quotes. The plan integrates the core quote wizard with powerful costing and rate management capabilities, supports multi-currency operations, and lays the groundwork for an AI-powered lead management system as a future enhancement.
+
+Core Components
+1. Quote Wizard
+Multi-step form for creating and editing quotes
+Progress indicator showing current step
+Save draft functionality at each step
+Form validation using Zod schemas
+2. Supplier & Rate Management Module (Prerequisite / Standalone Module)
+Supplier Database: CRUD (Create, Read, Update, Delete) interface for managing supplier details.
+Property/Activity Database: CRUD interface for managing properties and activities, linked to suppliers.
+Rate Database: Interface for managing nett rates, linked to properties/activities, including validity periods, currencies, rate types (per person, per vehicle, fixed), and min/max pax.
+Manual Rate Entry: Dedicated forms for entering and updating rates.
+Automated Rate Extraction (Future Enhancement / Advanced Phase): Consider integration with OCR/NLP solutions to process PDF/Word rate sheets into structured data for human review and import.
+3. Steps Implementation (Revised)
+a. Client & General Information
+Client selection/search (with option to create new)
+Contact details, Company information, Tax ID/VAT number
+Tour Type Selector (Accommodated, Camping, Self-Drive, Combo) - This will dynamically influence subsequent fields.
+Number of Paying Passengers and FOC (Free of Charge) clients.
+Quote Status: draft | sent | accepted | revision_requested | expired | converted | cancelled
+New: Default Quote Currency Selector: Default to ZAR, but allow selection for cases where the entire quote (including costs and selling price) must be in another currency from the start (e.g., USD for East Africa quotes).
+b. Itinerary & Detailed Costing (Expanded from "Trip Details" and "Services Selection")
+Day-by-Day Itinerary Builder:
+Day | Start Point | End Point | Activity | Accommodation | Type (Camping/Accommodated) | Meals (B,L,D) checkboxes.
+Daily KM Tracking: Input for KM travelled per day, and display of Total Tour KM.
+Live Search for Accommodation/Activity: As users type, suggest matching Properties_Activities from the database.
+If found: Automatically populate associated NettRate based on dates, client numbers, and supplier's quoted currency.
+If not found: Allow manual entry of Property/Activity Name, NettRate, and Currency for that specific cost, with an option to save to master database.
+Granular Cost Inputs (Dynamic based on Tour Type):
+Client Services (Per Person, Per Day): Input for Accommodation, Activities, Park Fees, and Meals (per person, per day, fetched via live search/manual entry, each with its own NettRate and Currency field).
+Crew Costs:
+Add multiple crew members (Driver, Guide, Cook, etc.). <!-- end list -->
+Daily Wage for each crew member, with its own Currency field.
+Days on Tour for each crew member.
+Crew Park Fees and Crew Activity Costs (per crew member, per day, fetched via live search/manual entry, each with its own NettRate and Currency field).
+Vehicle Costs:
+Select multiple vehicles (e.g., Nomad Truck, Sprinter). <!-- end list -->
+Vehicle Daily Rate, Number of Tour Days for Vehicle, each with its own Currency field.
+Vehicle Collection/Delivery Fees, with its own Currency field.
+Trailer Rental Fee and Number of Days for Trailer Rental, each with its own Currency field.
+Overheads (Shared):
+Tolls/Vehicle Border Fees (per day), with its own Currency field.
+Crew Accommodation Cost (per day), with its own Currency field.
+Crew Meal Budget (per day), with its own Currency field.
+Fuel Costs (if applicable to Tour Type):
+Fuel Price per Liter, with its own Currency field.
+Vehicle Fuel Consumption (KM/L).
+Start Transit KM, End Transit KM.
+Crew Relocation Costs: Specific costs for flights/travel, each with its own Currency field.
+Other Costs: Array for ad-hoc tour-specific costs not covered above, each with its own Currency field.
+FOC (Free of Charge) Client Calculation: Automatic calculation of FOC single supplement cost and its redistribution among paying clients.
+c. Pricing & Profitability Analysis (Expanded for Currency)
+Exchange Rate Management:
+Dedicated section to input and manage daily/real-time exchange rates (e.g., USD to ZAR, EUR to ZAR, AUD to ZAR, and vice-versa if needed).
+Option to manually override exchange rates for a specific quote.
+New: Automatic fetching of exchange rates from a reliable financial API (future enhancement).
+Multi-Currency Cost Aggregation:
+All individual supplier costs (e.g., USD, ZAR) will be converted to the quote's baseCurrency (default ZAR, or USD if selected upfront for East Africa quotes) using the managed exchange rates. This is the internal working currency.
+Display a breakdown of total nett costs in the baseCurrency.
+Markup Application: Apply distinct markups in the baseCurrency:
+Markup Percentage on Vehicle Cost.
+Markup Percentage on Client Services.
+Total Tour Selling Price (in baseCurrency).
+Detailed Profit Analysis (Internal View Only):
+Display Total Expenses, Total Income, Net Profit in the baseCurrency.
+Daily Profit View in the baseCurrency.
+Sliding Scale View: Interactive graph/table showing Per Person Selling Price and Profit Margin at different client numbers (e.g., 8, 10, 12, 14, 16, 18, 20, 24), calculated in the baseCurrency.
+Margin Approval Workflow: Integrate a mechanism for management to review and approve margins before final quote generation.
+Final Quote Currency Selection: Allow the user to select the finalQuoteCurrency for the client-facing document (ZAR, USD, EURO, AUD).
+The system will then convert the Total Selling Price from the baseCurrency to the selected finalQuoteCurrency using the relevant exchange rate.
+Clearly display the Total Selling Price and Per Person Selling Price in the finalQuoteCurrency.
+d. Review & Finalization (Refined from "Review & Confirm")
+Summary of all selections and calculated pricing, clearly indicating the finalQuoteCurrency.
+Inclusions & Exclusions Management: Dynamic lists generated from selected services/costs, with option for manual edits.
+Terms and conditions (pull from templates).
+Send quote options (email, PDF, link sharing).
+Save Final Quote: Archive full quote details (costing, itinerary, final price, and all relevant exchange rates used).
+Technical Implementation (Expanded)
+1. Backend Architecture
+Robust API Layer: Develop a comprehensive set of RESTful APIs to handle:
+CRUD operations for Quotes.
+CRUD operations for Suppliers, Properties_Activities, and Rates.
+Complex calculations for the Costing Engine, including multi-currency conversions.
+Live Search functionality for properties/activities (fast, indexed queries).
+Data processing for rate extraction (if implemented).
+New: APIs for managing and fetching exchange rates.
+Database Management:
+Use a relational database (e.g., PostgreSQL, MySQL) for Quotes, Suppliers, Properties_Activities, Rates, and ExchangeRates tables, ensuring relational integrity and optimized indexing.
+Implement an ORM (Object-Relational Mapping) for efficient database interactions.
+Business Logic Layer: Centralize all complex costing formulas, FOC calculations, markup applications, dynamic rule processing, and all currency conversion logic.
+Authentication & Authorization: Secure API endpoints with user authentication and role-based authorization.
+2. Frontend Technology
+Choice: React, Angular, Vue.js.
+Requirements: A modern JavaScript framework for building a responsive, interactive user interface that handles real-time search, dynamic forms, complex data grids for itinerary building and rate entry, and flexible currency input/display.
+3. State Management (Frontend)
+Use React Context or Redux Toolkit for global state management.
+Implement useReducer for complex state logic, especially within the Itinerary & Costing step.
+Persist state to localStorage for draft functionality.
+4. Form Handling (Frontend)
+React Hook Form for efficient form state management across the wizard.
+Zod for robust schema validation, ensuring data integrity.
+Custom form components for consistent UI and reusability, especially for dynamic arrays (e.g., multiple crew members, daily itinerary rows), including currency dropdowns for each cost item.
+5. UI/UX
+Responsive design for all screen sizes.
+Clear loading states, error handling, and validation feedback.
+Confirmation modals for important actions (e.g., sending quote, saving draft).
+Toast notifications for user feedback.
+Interactive elements for the sliding scale profitability view.
+New: Intuitive currency selectors at various points (default quote currency, individual cost items, final display currency).
+New: Clear display of original cost currency and converted base currency values.
+6. API Integration
+CRUD operations for quotes and all related costing data.
+Auto-save functionality for drafts.
+PDF generation API integration (e.g., React PDF on frontend, or a dedicated backend service for complex layouts).
+Email integration (backend service to send quotes, notifications).
+Integration with Supplier and Rate Management APIs for lookups and data persistence.
+New: Integration with exchange rate providers (if automated fetching implemented).
+Data Structure (Expanded for Currency)
+TypeScript
+
+interface Quote {
+  id: string;
+  status: 'draft' | 'sent' | 'accepted' | 'revision_requested' | 'expired' | 'converted' | 'cancelled';
+  quoteNumber: string;
+  client: { /* ... existing client fields ... */ };
+  trip: {
+    type: 'Accommodated' | 'Camping' | 'Combo' | 'Self-Drive';
+    payingPassengers: number;
+    focClients: number;
+    segments: Array<{
+      day: number;
+      startPoint: string;
+      endPoint: string;
+      activity: string;
+      accommodationName: string;
+      accommodationType: 'Camping' | 'Lodge' | 'Hotel';
+      meals: { B: boolean; L: boolean; D: boolean; };
+      dailyKm: number;
+      // Daily Costs (per person, nett, dynamically fetched from Rates or manual)
+      clientAccommodationNettCost: number;
+      clientAccommodationNettCostCurrency: string; // New: Currency for this specific cost
+      clientActivityNettCost: number;
+      clientActivityNettCostCurrency: string; // New
+      clientParkFeesNettCost: number;
+      clientParkFeesNettCostCurrency: string; // New
+      clientMealsNettCost: number;
+      clientMealsNettCostCurrency: string; // New
+      // Crew-specific daily costs
+      crewParkFeesNettCost?: number;
+      crewParkFeesNettCostCurrency?: string; // New
+      crewActivityNettCost?: number;
+      crewActivityNettCostCurrency?: string; // New
+      // Daily Overheads
+      tollsBorderFeesNettCost?: number;
+      tollsBorderFeesNettCostCurrency?: string; // New
+      crewAccommodationNettCost?: number;
+      crewAccommodationNettCostCurrency?: string; // New
+      crewMealBudgetNettCost?: number;
+      crewMealBudgetNettCostCurrency?: string; // New
+    }>;
+    totalTourKm: number;
+    notes?: string;
+  };
+  vehicles: Array<{
+    id?: string;
+    type: string;
+    dailyRateNett: number;
+    dailyRateNettCurrency: string; // New
+    daysOnTour: number;
+    collectionDeliveryFeeNett?: number;
+    collectionDeliveryFeeNettCurrency?: string; // New
+  }>;
+  trailers: Array<{
+    id?: string;
+    type: string;
+    rentalFeeNett: number;
+    rentalFeeNettCurrency: string; // New
+    daysOnTour: number;
+  }>;
+  crewMembers: Array<{
+    id?: string;
+    role: string;
+    dailyWageNett: number;
+    dailyWageNettCurrency: string; // New
+    daysOnTour: number;
+  }>;
+  fuel: {
+    pricePerLiterNett: number;
+    pricePerLiterNettCurrency: string; // New
+    vehicleConsumptionKmPerLiter: number;
+    startTransitKm: number;
+    endTransitKm: number;
+  };
+  otherCosts: Array<{
+    description: string;
+    nettCost: number;
+    currency: string; // Existing, but now consistently applied
+  }>;
+  // New: Currency settings for the quote
+  baseCurrency: 'ZAR' | 'USD' | 'EUR' | 'AUD'; // Internal calculation currency, default ZAR
+  finalQuoteCurrency: 'ZAR' | 'USD' | 'EUR' | 'AUD'; // Currency for client-facing quote
+  exchangeRatesUsed: { // New: Record rates used for transparency and historical data
+    [currencyPair: string]: number; // e.g., "USD_ZAR": 18.50, "ZAR_USD": 0.054
+  };
+  pricing: {
+    calculatedNettCosts: {
+      crewTotalNett: number;
+      vehicleTotalNett: number;
+      clientServicesTotalNett: number;
+      overheadsTotalNett: number;
+      crewRelocationTotalNett: number;
+      focSingleSupplementNett: number;
+      totalNettBeforeMarkup: number; // All these are in `baseCurrency`
+    };
+    markupPercentageVehicle: number;
+    markupPercentageClientServices: number;
+    totalSellingPriceBaseCurrency: number; // New: Total selling price in baseCurrency
+    totalSellingPriceFinalCurrency: number; // New: Total selling price in finalQuoteCurrency
+    perPersonSellingPriceBaseCurrency: number; // New
+    perPersonSellingPriceFinalCurrency: number; // New
+    profitNett: number; // In baseCurrency
+    profitMarginPercentage: number;
+  };
+  terms: { /* ... existing terms ... */ };
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
+  createdBy: string;
+  // Optional: field to link back to lead if AI system is implemented later
+  // leadSourceEmailId?: string;
+  // extractedLeadDetails?: any;
+}
+
+// New: Exchange Rate Data Structure
+interface ExchangeRate {
+    id: string;
+    fromCurrency: string;
+    toCurrency: string;
+    rate: number;
+    date: string; // Date for which the rate is valid
+    source?: string; // e.g., "Manual", "API Name"
+}
+
+// Additional data structures for Rate Management (likely in separate database service)
+// interface Supplier { ... }
+// interface PropertyActivity { ... }
+// interface Rate { ... } // Note: Rates will now *always* have a currency field
+Implementation Phases (Updated for Currency)
+Phase 1: Core Backend & Foundation (Weeks 1-3)
+Backend Setup: Establish backend framework, database connection, and API structure.
+Supplier & Rate Management Module (Basic):
+Implement Suppliers, Properties_Activities, and Rates database schemas. Ensure Rates schema includes a currency field.
+Develop CRUD APIs for these entities.
+Build basic UI for manual entry of suppliers, properties/activities, and rates, including currency selection for each rate.
+Quote Data Model & Basic APIs: Implement Quote data structure and core CRUD APIs for quotes (without full costing logic yet). Include baseCurrency and finalQuoteCurrency fields with default ZAR, and initial exchangeRatesUsed structure.
+Basic Wizard Structure: Set up React Context/Redux, React Hook Form, and Zod for the Quote Wizard.
+Client & General Information Step: Implement UI and API integration, including the Default Quote Currency Selector.
+Phase 2: Itinerary & Comprehensive Costing Integration (Weeks 4-7)
+Itinerary Builder UI: Develop the day-by-day itinerary grid with dynamic fields.
+Live Search Integration: Implement backend search for Properties_Activities and integrate with frontend itinerary inputs. Ensure NettRate and its Currency are retrieved and displayed. Allow manual entry to specify currency.
+Costing Engine Development (Backend - CRITICAL):
+Develop the multi-currency conversion logic: Accept individual costs in their respective currencies and convert them to the baseCurrency (e.g., ZAR) using the stored ExchangeRates.
+Implement all granular cost calculations (Client Services, Crew, Vehicle, Overheads, Fuel) operating on the baseCurrency values.
+Develop the dynamic rule engine based on Tour Type.
+Implement FOC client calculation and cost redistribution logic.
+UI for Granular Cost Inputs: Integrate all granular cost input fields into the Itinerary step, dynamically shown/hidden based on tour type. Ensure each cost input has an associated currency dropdown.
+Initial Cost Aggregation & Display: Connect backend costing APIs to frontend to show initial total costs in the baseCurrency.
+Phase 3: Advanced Pricing & Quote Finalization (Weeks 8-10)
+Exchange Rate Management UI: Develop an interface for managing ExchangeRates (manual entry initially).
+Markup Application Logic: Implement backend logic for separate markups on vehicle and client services, applied to baseCurrency totals.
+Profitability Analysis UI:
+Develop the internal dashboard for Total Expenses, Total Income, Net Profit, Daily Profit, all displayed in the baseCurrency.
+Implement the interactive Sliding Scale View, calculated in the baseCurrency.
+Integrate Margin Approval Workflow.
+Final Quote Currency Selection UI: Add a dropdown for the user to select the finalQuoteCurrency (ZAR, USD, EURO, AUD). Implement frontend logic to convert and display the total selling price in this selected currency.
+Inclusions & Exclusions Management: Develop the UI and logic for dynamic lists and manual overrides.
+Review & Finalization Step: Complete summary display, terms and conditions integration, clearly showing the final quote currency.
+PDF Generation: Integrate backend service or React PDF for robust PDF quote generation, ensuring correct currency display and symbols.
+Email Integration: Implement sending finalized quotes via email.
+Phase 4: Polish, Optimization & Testing (Weeks 11-12)
+Comprehensive Form Validation & Error Handling: Ensure all forms have robust validation, including currency inputs and conversions.
+Responsive Design Refinements: Ensure optimal UI across devices.
+Performance Optimization: Optimize API calls, database queries, and frontend rendering, paying special attention to currency conversion overhead.
+Unit, Component, Integration, and E2E Testing:
+Crucial for Costing & Currency: Develop extensive unit tests for all calculation formulas and all currency conversion scenarios (ZAR to USD, USD to ZAR, etc.).
+Develop integration tests to ensure data flows correctly between Supplier/Rate Management, Costing Engine, and Quote Builder, and that currency conversions are correct at each stage.
+Perform thorough scenario testing (positive, negative, edge cases for all tour types and currency combinations).
+User Acceptance Testing (UAT): Conduct UAT with your quoting team, including parallel runs if feasible.
+Documentation: Comprehensive API documentation, user manuals, and technical documentation.
+Phase 5: Future Enhancements (Post-Core Deployment)
+AI-Powered Lead Management Module: (As previously detailed)
+Automated Rate Sheet Extraction: Full implementation of OCR/NLP for automated data parsing with human validation for rate sheets, including currency detection.
+Automated Exchange Rate Fetching: Integrate with a reliable financial API (e.g., Open Exchange Rates, ExchangeRate-API) to automatically fetch and update exchange rates.
+Integration with Booking System (e.g., Tour Plan): Seamless transfer of confirmed quotes to booking management.
+Advanced Reporting & Analytics: Beyond basic stats (e.g., conversion rates by tour type, agent performance, profitability by original currency or region).
+Mobile App Integration: Native mobile application for quoting.
+Audit Trails: Detailed logging of changes to quotes and rates for compliance and troubleshooting.
+Supplier Portal: Allow suppliers to directly update their rates in the system (with approval workflow), always specifying their quote currency.
+Success Metrics
+Significant reduction in quote creation time.
+Decrease in user errors during quote creation (especially costing and currency errors).
+Increased accuracy and consistency of quotes across different currencies.
+Improved conversion rate from quote to booking due to faster and more accurate quotes.
+Positive user feedback on the quoting process, comprehensiveness, and ease of use.
+Reduced manual effort in managing supplier rates and currency conversions.
+Reduction in manual lead screening time (with AI Phase).
+Faster initiation of qualified quotes due to automated information gathering (with AI Phase).
+This detailed plan incorporates your currency requirements, ensuring the system can handle both ZAR-based and foreign currency-based quotes effectively.
