@@ -4,8 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { crewRoles } from "@/hooks/useTourCalculator";
-import { CrewMember, CrewMealRates } from "@/hooks/useTourCalculator";
+import { crewRoles } from "@/hooks/tourCalculator/tourCalculatorData";
+import type { CrewMember, CrewMealRates } from "@/hooks/tourCalculator/types";
 import { Plus, Trash } from "lucide-react";
 
 interface CrewSectionProps {

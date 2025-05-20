@@ -1,49 +1,159 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "../../ui/button";
-// DEBUG: changed from alias to relative import
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../ui/card";
 import { useNavigate } from "react-router-dom";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { QuoteType } from "@/types";
+import { FITTourType, GroupTourType, ServiceLevel, AccommodationType, MealPlan, CrewType, VehicleType } from "@/types/quotes";
 import { WizardSteps } from "./WizardSteps";
 import { ClientInformationStep } from "./steps/ClientInformationStep";
 import { TripDetailsStep } from "./steps/TripDetailsStep";
 import { PassengersStep } from "./steps/PassengersStep";
 import { PriceCalculatorStep } from "./steps/PriceCalculatorStep";
 import { ReviewStep } from "./steps/ReviewStep";
+import { TourTypeStep } from "./steps/TourTypeStep";
+import { FITDetailsStep } from "./steps/FITDetailsStep";
+import { GroupDetailsStep } from "./steps/GroupDetailsStep";
+
+// Base tour details interface
+export interface BaseTourDetails {
+  title: string;
+  description: string;
+  startDate: Date | null;
+  endDate: Date | null;
+  duration: number;
+  pax: {
+    adults: number;
+    children: number;
+    total: number;
+    isGroup: boolean;
+  };
+  serviceLevel: ServiceLevel;
+  accommodationType: AccommodationType;
+  mealPlan: MealPlan;
+  destinations: string[];
+  notes: string;
+}
+
+// FIT tour specific details
+interface FITTourDetails {
+  fitType: FITTourType;
+  vehicleType?: VehicleType;
+  crewType?: CrewType;
+  isSelfDrive: boolean;
+  includesVehicle: boolean;
+  includesAccommodation: boolean;
+  includesMeals: boolean;
+  includesActivities: boolean;
+  supplierDetails?: {
+    name: string;
+    contact: string;
+    cost: number;
+  };
+}
+
+// Group tour specific details
+interface GroupTourDetails {
+  groupType: GroupTourType;
+  vehicleType: VehicleType;
+  crewType: CrewType;
+  includesCampingEquipment: boolean;
+  includesCookingEquipment: boolean;
+  includesParkFees: boolean;
+  includesActivities: boolean;
+  requiresSingleRooms: boolean;
+  requiresDoubleRooms: boolean;
+  requiresTwinRooms: boolean;
+}
 
 export function QuoteWizard() {
   const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
-  const [clientId, setClientId] = useState("");
-  const [quoteType, setQuoteType] = useState<QuoteType | "">("");
-  const [startDate, setStartDate] = useState<Date>();
-  const [endDate, setEndDate] = useState<Date>();
-  const [selectedDestinations, setSelectedDestinations] = useState<string[]>([]);
   
-  // Manage passengers as a single state object
-  const [passengers, setPassengers] = useState({
-    adults: "2",
-    children: "0",
-    notes: ""
+  // Base tour state
+  const [tourType, setTourType] = useState<'FIT' | 'GROUP' | ''>('');
+  
+  // Base tour details
+  const [tourDetails, setTourDetails] = useState<BaseTourDetails>({
+    title: '',
+    description: '',
+    startDate: null,
+    endDate: null,
+    duration: 0,
+    pax: {
+      adults: 2,
+      children: 0,
+      total: 2,
+      isGroup: false
+    },
+    serviceLevel: 'STANDARD',
+    accommodationType: 'HOTEL',
+    mealPlan: 'BB',
+    destinations: [],
+    notes: ''
   });
-  
+
+  // FIT tour specific state
+  const [fitDetails, setFitDetails] = useState<FITTourDetails>({
+    fitType: 'PRIVATE_GUIDED',
+    isSelfDrive: false,
+    includesVehicle: true,
+    includesAccommodation: true,
+    includesMeals: true,
+    includesActivities: true,
+    vehicleType: '4X4',
+    crewType: 'DRIVER_GUIDE'
+  });
+
+  // Group tour specific state
+  const [groupDetails, setGroupDetails] = useState<GroupTourDetails>({
+    groupType: 'FULLY_INCLUDED',
+    vehicleType: 'MINIBUS',
+    crewType: 'FULL_CREW',
+    includesCampingEquipment: false,
+    includesCookingEquipment: false,
+    includesParkFees: true,
+    includesActivities: true,
+    requiresSingleRooms: true,
+    requiresDoubleRooms: true,
+    requiresTwinRooms: false
+  });
+
   const [totalPrice, setTotalPrice] = useState(0);
   const [perPersonPrice, setPerPersonPrice] = useState(0);
 
   // Track validity for each step
-  const [stepValidity, setStepValidity] = useState<boolean[]>([false, false, false]);
+  const [stepValidity, setStepValidity] = useState<boolean[]>([]);
 
+  // Define steps based on tour type
   const steps = [
-    "Client Information",
-    "Trip Details",
-    "Passengers",
-    "Price Calculator",
-    "Review"
+    'Tour Type',
+    'Tour Details',
+    'Passengers',
+    tourType === 'FIT' ? 'FIT Details' : 'Group Details',
+    'Price Calculator',
+    'Review'
   ];
+
+  // Update step validity when tour type changes
+  useEffect(() => {
+    // Reset step validity when tour type changes
+    setStepValidity(Array(steps.length).fill(false));
+  }, [tourType]);
+
+  // Update total pax when adults or children change
+  useEffect(() => {
+    setTourDetails(prev => ({
+      ...prev,
+      pax: {
+        ...prev.pax,
+        total: prev.pax.adults + prev.pax.children,
+        isGroup: (prev.pax.adults + prev.pax.children) >= 8
+      }
+    }));
+  }, [tourDetails.pax.adults, tourDetails.pax.children]);
 
   const handleNext = () => {
     if (activeStep < steps.length - 1) {

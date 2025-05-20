@@ -1,5 +1,27 @@
 
-import { QuoteType } from ".";
+// Base Quote Type
+export type QuoteType = 'FIT' | 'GROUP';
+
+// FIT Tour Subtypes
+export type FITTourType = 'SELF_DRIVE' | 'PRIVATE_GUIDED' | 'SUBCONTRACTED' | 'OUTSOURCED';
+
+// Group Tour Subtypes
+export type GroupTourType = 'VEHICLE_ONLY' | 'FULLY_INCLUDED';
+
+// Tour Service Level
+export type ServiceLevel = 'BUDGET' | 'STANDARD' | 'LUXURY' | 'CUSTOM';
+
+// Accommodation Types
+export type AccommodationType = 'HOTEL' | 'LODGE' | 'GUESTHOUSE' | 'CAMPING' | 'MIXED';
+
+// Vehicle Types
+export type VehicleType = 'MINIVAN' | '4X4' | 'MINIBUS' | 'COASTER' | 'COACH' | 'LUXURY_VEHICLE';
+
+// Crew Types
+export type CrewType = 'DRIVER_ONLY' | 'DRIVER_GUIDE' | 'FULL_CREW' | 'SELF_DRIVE';
+
+// Meal Plan Types
+export type MealPlan = 'RO' | 'BB' | 'HB' | 'FB' | 'AI'; // Room Only, Bed & Breakfast, Half Board, Full Board, All Inclusive
 
 // Client-related types
 export interface Client {
@@ -80,6 +102,61 @@ export interface QuoteApproval {
   reviewedBy?: string;
   reviewedAt?: Date;
   comments?: string;
+}
+
+// Base Tour Interface
+export interface BaseTourDetails {
+  id: string;
+  title: string;
+  description?: string;
+  startDate: Date;
+  endDate: Date;
+  duration: number; // in days
+  pax: {
+    adults: number;
+    children: number;
+    total: number;
+    isGroup: boolean; // true if group (8+ pax)
+  };
+  serviceLevel: ServiceLevel;
+  accommodationType: AccommodationType;
+  mealPlan: MealPlan;
+  destinations: string[];
+  itinerary: ItineraryItem[];
+  notes?: string;
+}
+
+// FIT Tour Specific Details
+export interface FITTourDetails extends BaseTourDetails {
+  type: 'FIT';
+  fitType: FITTourType;
+  vehicleType?: VehicleType;
+  crewType?: CrewType;
+  isSelfDrive: boolean;
+  includesVehicle: boolean;
+  includesAccommodation: boolean;
+  includesMeals: boolean;
+  includesActivities: boolean;
+  supplierDetails?: {
+    name: string;
+    contact: string;
+    cost: number;
+  };
+}
+
+// Group Tour Specific Details
+export interface GroupTourDetails extends BaseTourDetails {
+  type: 'GROUP';
+  groupType: GroupTourType;
+  vehicleType: VehicleType;
+  crewType: CrewType;
+  includesCampingEquipment: boolean;
+  includesCookingEquipment: boolean;
+  includesParkFees: boolean;
+  includesActivities: boolean;
+  requiresSingleRooms: boolean;
+  requiresDoubleRooms: boolean;
+  requiresTwinRooms: boolean;
 }
 
 export interface EnhancedQuote {
