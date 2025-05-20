@@ -1,12 +1,36 @@
-
 // Base Quote Type
-export type QuoteType = 'FIT' | 'GROUP';
+export enum QuoteType {
+  FIT = 'FIT',
+  GROUP = 'GROUP'
+}
 
-// FIT Tour Subtypes
-export type FITTourType = 'SELF_DRIVE' | 'PRIVATE_GUIDED' | 'SUBCONTRACTED' | 'OUTSOURCED';
+// Enhanced tour type for more specific classifications
+export enum TourType {
+  ACCOMMODATED = 'ACCOMMODATED',
+  CAMPING = 'CAMPING',
+  COMBINATION = 'COMBINATION', // Mix of accommodated and camping
+  SELF_DRIVE = 'SELF_DRIVE'
+}
 
-// Group Tour Subtypes
-export type GroupTourType = 'VEHICLE_ONLY' | 'FULLY_INCLUDED';
+export enum FITTourType {
+  SELF_DRIVE = 'SELF_DRIVE',
+  PRIVATE_GUIDED = 'PRIVATE_GUIDED',
+  SUBCONTRACTED = 'SUBCONTRACTED',
+  OUTSOURCED = 'OUTSOURCED'
+}
+
+export enum GroupTourType {
+  VEHICLE_ONLY = 'VEHICLE_ONLY',
+  FULLY_INCLUDED = 'FULLY_INCLUDED'
+}
+
+export enum CrewMemberType {
+  DRIVER = 'DRIVER',
+  GUIDE = 'GUIDE',
+  DRIVER_GUIDE = 'DRIVER_GUIDE',
+  COOK = 'COOK',
+  ASSISTANT = 'ASSISTANT'
+}
 
 // Tour Service Level
 export type ServiceLevel = 'BUDGET' | 'STANDARD' | 'LUXURY' | 'CUSTOM';
@@ -15,10 +39,35 @@ export type ServiceLevel = 'BUDGET' | 'STANDARD' | 'LUXURY' | 'CUSTOM';
 export type AccommodationType = 'HOTEL' | 'LODGE' | 'GUESTHOUSE' | 'CAMPING' | 'MIXED';
 
 // Vehicle Types
-export type VehicleType = 'MINIVAN' | '4X4' | 'MINIBUS' | 'COASTER' | 'COACH' | 'LUXURY_VEHICLE';
+export enum VehicleType {
+  MINIVAN = 'MINIVAN',
+  '4X4' = '4X4',
+  LUXURY_VEHICLE = 'LUXURY_VEHICLE',
+  MINIBUS = 'MINIBUS', // Up to 22 pax
+  COACH = 'COACH', // 23+ pax
+  TRUCK = 'TRUCK', // Safari truck
+  SPRINTER = 'SPRINTER',
+  CUSTOM = 'CUSTOM'
+}
 
-// Crew Types
-export type CrewType = 'DRIVER_ONLY' | 'DRIVER_GUIDE' | 'FULL_CREW' | 'SELF_DRIVE';
+export interface VehicleDetails {
+  id: string;
+  name: string;
+  type: VehicleType;
+  dailyRate: number;
+  fuelConsumption: number; // km per liter
+  maxPassengers: number;
+  collectionFee?: number;
+  deliveryFee?: number;
+}
+
+export interface TrailerDetails {
+  id: string;
+  name: string;
+  dailyRate: number;
+  collectionFee?: number;
+  deliveryFee?: number;
+}
 
 // Meal Plan Types
 export type MealPlan = 'RO' | 'BB' | 'HB' | 'FB' | 'AI'; // Room Only, Bed & Breakfast, Half Board, Full Board, All Inclusive
@@ -33,6 +82,16 @@ export interface Client {
   notes?: string;
 }
 
+export interface CrewMember {
+  id: string;
+  name: string;
+  type: CrewMemberType;
+  dailyWage: number;
+  startDay: number; // Day of tour when crew member starts
+  endDay: number; // Day of tour when crew member ends
+  relocationCost: number; // Cost for crew flights/transport to start/end points
+}
+
 // Itinerary-related types
 export interface ItineraryItem {
   id: string;
@@ -40,16 +99,31 @@ export interface ItineraryItem {
   date: Date | string;
   startLocation: string;
   endLocation: string;
+  description: string;
   activity: string;
   accommodation: string;
-  accommodationType: string;
-  distance?: string;
-  duration?: string;
+  accommodationType: AccommodationType;
+  distance: number; // Daily distance in km
   meals: {
     breakfast: boolean;
     lunch: boolean;
     dinner: boolean;
   };
+  // Daily expenses
+  vehicleBorderFees: number;
+  tollFees: number;
+  crewAccommodationCost: number;
+  crewMealBudget: number;
+
+  // Per-person daily costs
+  accommodationCostPerPerson: number;
+  activityCostPerPerson: number;
+  parkFeesPerPerson: number;
+  mealsCostPerPerson: number;
+
+  // Crew-specific costs
+  crewParkFees: number;
+  crewActivityCosts: number;
 }
 
 // Inclusion and exclusion items
@@ -131,7 +205,7 @@ export interface FITTourDetails extends BaseTourDetails {
   type: 'FIT';
   fitType: FITTourType;
   vehicleType?: VehicleType;
-  crewType?: CrewType;
+  crewType?: CrewMemberType;
   isSelfDrive: boolean;
   includesVehicle: boolean;
   includesAccommodation: boolean;
@@ -149,7 +223,7 @@ export interface GroupTourDetails extends BaseTourDetails {
   type: 'GROUP';
   groupType: GroupTourType;
   vehicleType: VehicleType;
-  crewType: CrewType;
+  crewType: CrewMemberType;
   includesCampingEquipment: boolean;
   includesCookingEquipment: boolean;
   includesParkFees: boolean;
