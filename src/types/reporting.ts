@@ -1,115 +1,54 @@
-export interface ActivityAnalytics {
-  totalActivities: number;
-  totalActivityRevenue: number;
-  averageActivityCost: number;
-  activitiesByCategory: {
-    [category: string]: {
-      count: number;
-      revenue: number;
-      averageCost: number;
-    }
-  };
-  activityPopularity: {
-    activityId: string;
-    activityName: string;
-    bookings: number;
-    revenue: number;
-    averageCost: number;
-    utilizationRate: number;
-  }[];
-  activityRevenueByMonth: {
-    month: string;
-    revenue: number;
-    bookings: number;
-  }[];
-  activityCapacityUtilization: {
-    activityId: string;
-    activityName: string;
-    totalCapacity: number;
-    usedCapacity: number;
-    utilizationRate: number;
-  }[];
-}
 
 import { BookingStatus } from './booking';
 
-export interface BookingAnalytics {
-  totalBookings: number;
-  totalRevenue: number;
-  averageBookingValue: number;
-  bookingsByStatus: {
-    [key in BookingStatus]: number;
-  };
-  revenueByMonth: {
-    month: string;
-    revenue: number;
-    bookings: number;
-  }[];
-  occupancyRates: {
-    roomType: string;
-    occupancyRate: number;
-    totalNights: number;
-  }[];
-  activityAnalytics: ActivityAnalytics;
+export interface ReportFilters {
+  startDate?: Date;
+  endDate?: Date;
+  categories?: string[];
+  destinations?: string[];
+  tourTypes?: string[];
+  minValue?: number;
+  maxValue?: number;
+  status?: string;
 }
 
-export interface PerformanceMetrics {
-  revenueGrowth: {
-    period: string;
-    percentage: number;
-    current: number;
-    previous: number;
-  };
-  bookingConversionRate: {
-    totalInquiries: number;
-    totalBookings: number;
-    conversionRate: number;
-  };
-  averageBookingLeadTime: {
-    days: number;
-    bookings: number;
-  };
-  cancellationRate: {
-    totalBookings: number;
-    cancelledBookings: number;
-    rate: number;
-  };
+export interface ReportOptions {
+  groupBy?: string;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
+  limit?: number;
+  currency?: string;
 }
 
-export interface TrendAnalysis {
-  revenueTrends: {
-    period: string;
-    revenue: number;
-    growth: number;
-  }[];
-  seasonalPatterns: {
-    month: string;
-    bookings: number;
-    revenue: number;
-    occupancy: number;
-  }[];
-  customerDemographics: {
-    nationality: string;
-    bookings: number;
-    revenue: number;
-  }[];
-  bookingSources: {
-    source: string;
-    medium: string;
-    campaign: string;
-    bookings: number;
-    revenue: number;
-    conversionRate: number;
-  }[];
+export interface ReportData {
+  title: string;
+  description?: string;
+  generated: Date;
+  filters?: ReportFilters;
+  options?: ReportOptions;
+  data: any;
+  summary?: Record<string, any>;
 }
 
-export interface AnalyticsFilters {
-  dateRange: {
-    start: Date;
-    end: Date;
-  };
-  status?: BookingStatus[];
-  roomType?: string[];
-  nationality?: string[];
-  activity?: string[];
+export interface SalesPerformance {
+  period: string;
+  revenue: number;
+  bookings: number;
+  inquiries: number;
+  conversionRate: number;
 }
+
+export interface StatusDistribution {
+  [key: string]: number;
+  [key: BookingStatus]: number; // This will be fixed by our BookingStatus enum
+}
+
+export enum ReportType {
+  SALES = 'sales',
+  BOOKINGS = 'bookings',
+  DESTINATIONS = 'destinations',
+  REVENUE = 'revenue',
+  PERFORMANCE = 'performance',
+  CONVERSION = 'conversion'
+}
+

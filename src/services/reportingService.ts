@@ -1,287 +1,338 @@
-import { Booking, BookingStatus, Activity, ActivityBooking } from '../types/booking';
-import { BookingAnalytics, PerformanceMetrics, TrendAnalysis, AnalyticsFilters, ActivityAnalytics } from '../types/reporting';
-import { BookingService } from './bookingService';
 
-export class ReportingService {
-  private static instance: ReportingService;
-  private bookingService: BookingService;
+import { Booking, BookingStatus, Activity, ActivityBooking } from "../types/booking";
+import { generateReport } from "../utils/reportGenerator";
 
-  private constructor() {
-    this.bookingService = BookingService.getInstance();
+// Mock data for demonstration purposes
+const mockBookings: Booking[] = [];
+
+// Generate some sample data for the last 12 months
+const generateMockData = () => {
+  const now = new Date();
+  const startDate = new Date(now);
+  startDate.setFullYear(now.getFullYear() - 1);
+  
+  const destinations = ["South Africa", "Namibia", "Botswana", "Zimbabwe", "Zambia", "Malawi", "Tanzania", "Kenya"];
+  const tourTypes = ["standard", "luxury", "adventure", "custom", "budget"];
+  
+  // Generate a random date between start and end
+  const randomDate = (start: Date, end: Date) => {
+    return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+  };
+  
+  // Generate bookings data
+  for (let i = 0; i < 100; i++) {
+    const bookingDate = randomDate(startDate, now);
+    const status = Object.values(BookingStatus)[Math.floor(Math.random() * Object.values(BookingStatus).length)];
+    
+    mockBookings.push({
+      id: `booking-${i}`,
+      clientId: `client-${Math.floor(Math.random() * 20)}`,
+      quoteId: `quote-${i}`,
+      status,
+      bookingDate,
+      totalAmount: 1000 + Math.random() * 4000,
+      depositAmount: 500 + Math.random() * 1000,
+      depositPaid: Math.random() > 0.3,
+      depositDueDate: new Date(bookingDate.getTime() + 7 * 24 * 60 * 60 * 1000),
+      balanceDueDate: new Date(bookingDate.getTime() + 30 * 24 * 60 * 60 * 1000),
+      notes: "",
+      paymentHistory: []
+    });
   }
+};
 
-  public static getInstance(): ReportingService {
-    if (!ReportingService.instance) {
-      ReportingService.instance = new ReportingService();
+// Generate mock data on module load
+generateMockData();
+
+// Sales Reports
+export const getSalesReportByPeriod = async (startDate: Date, endDate: Date): Promise<any> => {
+  return generateReport({
+    title: "Sales Report",
+    description: `Sales from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`,
+    data: mockBookings.filter(booking => 
+      booking.bookingDate >= startDate && 
+      booking.bookingDate <= endDate
+    ),
+    summary: {
+      totalSales: mockBookings
+        .filter(booking => booking.bookingDate >= startDate && booking.bookingDate <= endDate)
+        .reduce((sum, booking) => sum + booking.totalAmount, 0),
+      totalBookings: mockBookings.filter(booking => 
+        booking.bookingDate >= startDate && 
+        booking.bookingDate <= endDate
+      ).length,
     }
-    return ReportingService.instance;
-  }
+  });
+};
 
-  // Helper function to filter bookings by date range
-  private filterBookingsByDate(
-    bookings: Booking[],
-    dateRange: { start: Date; end: Date }
-  ): Booking[] {
-    return bookings.filter(booking => 
-      booking.tourStartDate >= dateRange.start && 
-      booking.tourStartDate <= dateRange.end
+export const getBookingsByStatus = async (status: BookingStatus, startDate?: Date, endDate?: Date): Promise<any> => {
+  let filteredBookings = mockBookings.filter(booking => booking.status === status);
+  
+  if (startDate && endDate) {
+    filteredBookings = filteredBookings.filter(booking => 
+      booking.bookingDate >= startDate && 
+      booking.bookingDate <= endDate
     );
   }
+  
+  return generateReport({
+    title: `${status} Bookings Report`,
+    description: startDate && endDate ? 
+      `${status} bookings from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}` : 
+      `All ${status} bookings`,
+    data: filteredBookings,
+    summary: {
+      totalBookings: filteredBookings.length,
+      totalValue: filteredBookings.reduce((sum, booking) => sum + booking.totalAmount, 0)
+    }
+  });
+};
 
-  // Helper function to calculate occupancy rates
-  private calculateOccupancyRates(bookings: Booking[]): any[] {
-    const roomTypes = new Set(bookings.map(b => b.accommodationPreferences?.roomType).filter(Boolean));
-    return Array.from(roomTypes).map(roomType => {
-      const bookingsForType = bookings.filter(b => b.accommodationPreferences?.roomType === roomType);
-      const totalNights = bookingsForType.reduce((sum, booking) => 
-        sum + (booking.tourEndDate.getTime() - booking.tourStartDate.getTime()) / 
-        (1000 * 60 * 60 * 24), 0);
-      
-      const totalPassengers = bookingsForType.reduce((sum, booking) => 
-        sum + booking.passengers.length, 0);
-      
-      return {
-        roomType,
-        occupancyRate: totalPassengers / totalNights,
-        totalNights
-      };
-    });
-  }
-
-  // Helper function to calculate revenue trends
-  private calculateRevenueTrends(bookings: Booking[]): any[] {
-    const monthlyRevenue: Record<string, { revenue: number; bookings: number }> = {};
+export const getRevenueByPeriod = async (
+  period: "daily" | "weekly" | "monthly" | "quarterly" | "yearly", 
+  startDate: Date, 
+  endDate: Date
+): Promise<any> => {
+  // Filter bookings within the date range
+  const filteredBookings = mockBookings.filter(booking => 
+    booking.bookingDate >= startDate && 
+    booking.bookingDate <= endDate
+  );
+  
+  // Group by period
+  const groupedData: Record<string, number> = {};
+  
+  filteredBookings.forEach(booking => {
+    let key: string;
+    const date = new Date(booking.bookingDate);
     
-    bookings.forEach(booking => {
-      const month = booking.tourStartDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-      if (!monthlyRevenue[month]) {
-        monthlyRevenue[month] = { revenue: 0, bookings: 0 };
-      }
-      monthlyRevenue[month].revenue += booking.totalCost;
-      monthlyRevenue[month].bookings++;
-    });
-
-    return Object.entries(monthlyRevenue).map(([month, data]) => ({
-      month,
-      revenue: data.revenue,
-      bookings: data.bookings
-    }));
-  }
-
-  // Helper function to calculate activity analytics
-  private calculateActivityAnalytics(bookings: Booking[]): ActivityAnalytics {
-    const activities = bookings.flatMap(booking => booking.activities);
+    switch (period) {
+      case "daily":
+        key = date.toISOString().split("T")[0];
+        break;
+      case "weekly":
+        const week = Math.floor(date.getDate() / 7) + 1;
+        key = `${date.getFullYear()}-W${week}`;
+        break;
+      case "monthly":
+        key = `${date.getFullYear()}-${date.getMonth() + 1}`;
+        break;
+      case "quarterly":
+        const quarter = Math.floor(date.getMonth() / 3) + 1;
+        key = `${date.getFullYear()}-Q${quarter}`;
+        break;
+      case "yearly":
+        key = date.getFullYear().toString();
+        break;
+    }
     
-    const totalActivities = activities.length;
-    const totalActivityRevenue = activities.reduce((sum, activity) => sum + activity.totalCost, 0);
+    if (!groupedData[key]) {
+      groupedData[key] = 0;
+    }
     
-    // Calculate activities by category
-    const activitiesByCategory: Record<string, any> = {};
-    activities.forEach(activity => {
-      const category = activity.activityName.split(' ').pop() || 'Other'; // Extract category from name
-      if (!activitiesByCategory[category]) {
-        activitiesByCategory[category] = {
-          count: 0,
-          revenue: 0,
-          averageCost: 0
-        };
+    groupedData[key] += booking.totalAmount;
+  });
+  
+  // Convert to array of period and amount
+  const data = Object.entries(groupedData).map(([period, amount]) => ({
+    period,
+    amount
+  }));
+  
+  return generateReport({
+    title: `Revenue by ${period.charAt(0).toUpperCase() + period.slice(1)} Report`,
+    description: `Revenue from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()} grouped by ${period}`,
+    data,
+    summary: {
+      totalRevenue: filteredBookings.reduce((sum, booking) => sum + booking.totalAmount, 0),
+      periodCount: data.length,
+      averagePerPeriod: data.length > 0 ? 
+        filteredBookings.reduce((sum, booking) => sum + booking.totalAmount, 0) / data.length : 0
+    }
+  });
+};
+
+// Cancellation Reports
+export const getCancellationRate = async (startDate: Date, endDate: Date): Promise<any> => {
+  const bookingsInPeriod = mockBookings.filter(booking => 
+    booking.bookingDate >= startDate && 
+    booking.bookingDate <= endDate
+  );
+  
+  const cancelledBookings = bookingsInPeriod.filter(booking => 
+    booking.status === BookingStatus.CANCELLED
+  );
+  
+  const cancellationRate = bookingsInPeriod.length > 0 ? 
+    (cancelledBookings.length / bookingsInPeriod.length) * 100 : 0;
+  
+  return generateReport({
+    title: "Cancellation Rate Report",
+    description: `Cancellation rate from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`,
+    data: {
+      totalBookings: bookingsInPeriod.length,
+      cancelledBookings: cancelledBookings.length,
+      cancellationRate: cancellationRate.toFixed(2) + "%"
+    },
+    summary: {
+      cancellationRate: cancellationRate.toFixed(2) + "%"
+    }
+  });
+};
+
+// Currency Conversion Report
+export const getRevenueByDestination = async (
+  startDate: Date, 
+  endDate: Date, 
+  groupBy: "country" | "region" | "tour", 
+  currency: string = "USD"
+): Promise<any> => {
+  try {
+    // In a real implementation, we would get currency rates
+    // and destinations data from the database or an API
+    const mockCurrencyData: Record<string, any> = {
+      rates: {
+        USD: 1.0,
+        EUR: 0.85,
+        GBP: 0.73,
+        ZAR: 15.5,
+        NAD: 15.5,
+        BWP: 11.2
+      },
+      destinations: {
+        "South Africa": { 
+          region: "Southern Africa", 
+          tours: ["Cape Town Explorer", "Garden Route", "Kruger Safari"],
+          currency: "ZAR",
+          conversionRate: 15.5,
+          bookings: [] // Will be filled with filtered bookings
+        },
+        "Namibia": { 
+          region: "Southern Africa", 
+          tours: ["Namibia Desert Explorer", "Fish River Canyon"],
+          currency: "NAD",
+          conversionRate: 15.5,
+          bookings: []
+        },
+        "Botswana": { 
+          region: "Southern Africa", 
+          tours: ["Okavango Delta", "Chobe Safari"],
+          currency: "BWP",
+          conversionRate: 11.2,
+          bookings: []
+        }
       }
-      activitiesByCategory[category].count++;
-      activitiesByCategory[category].revenue += activity.totalCost;
-      activitiesByCategory[category].averageCost = 
-        activitiesByCategory[category].revenue / activitiesByCategory[category].count;
-    });
-
-    // Calculate activity popularity
-    const activityPopularity = activities.reduce((acc, activity) => {
-      const existing = acc.find(a => a.activityId === activity.activityId);
-      if (existing) {
-        existing.bookings++;
-        existing.revenue += activity.totalCost;
-        existing.averageCost = existing.revenue / existing.bookings;
-      } else {
-        acc.push({
-          activityId: activity.activityId,
-          activityName: activity.activityName,
-          bookings: 1,
-          revenue: activity.totalCost,
-          averageCost: activity.totalCost,
-          utilizationRate: 0 // Will be calculated later
-        });
-      }
-      return acc;
-    }, [] as any[]);
-
-    // Calculate utilization rates
-    activityPopularity.forEach(activity => {
-      const utilizationRate = activity.bookings / 
-        (activity.activityName.match(/\d+/)?.[0] || 1); // Assuming capacity is in name
-      activity.utilizationRate = utilizationRate * 100;
-    });
-
-    // Calculate revenue by month
-    const activityRevenueByMonth = activities.reduce((acc, activity) => {
-      const month = activity.bookingDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-      const existing = acc.find(a => a.month === month);
-      if (existing) {
-        existing.revenue += activity.totalCost;
-        existing.bookings++;
-      } else {
-        acc.push({
-          month,
-          revenue: activity.totalCost,
-          bookings: 1
-        });
-      }
-      return acc;
-    }, [] as any[]);
-
-    // Calculate capacity utilization
-    const activityCapacityUtilization = activityPopularity.map(activity => ({
-      activityId: activity.activityId,
-      activityName: activity.activityName,
-      totalCapacity: activity.activityName.match(/\d+/)?.[0] || 1,
-      usedCapacity: activity.bookings,
-      utilizationRate: activity.utilizationRate
-    }));
-
-    return {
-      totalActivities,
-      totalActivityRevenue,
-      averageActivityCost: totalActivities > 0 ? totalActivityRevenue / totalActivities : 0,
-      activitiesByCategory,
-      activityPopularity,
-      activityRevenueByMonth,
-      activityCapacityUtilization
     };
-  }
-
-  // Get booking analytics
-  public async getBookingAnalytics(filters: AnalyticsFilters): Promise<BookingAnalytics> {
-    const bookings = this.filterBookingsByDate(this.bookingService.getAllBookings(), filters.dateRange);
     
-    const totalRevenue = bookings.reduce((sum, booking) => sum + booking.totalCost, 0);
-    const totalBookings = bookings.length;
+    // Aggregate data based on the groupBy parameter
+    let groupedData: Record<string, any> = {};
     
-    const bookingsByStatus = Object.values(BookingStatus).reduce((acc, status) => {
-      acc[status] = bookings.filter(b => b.status === status).length;
-      return acc;
-    }, {} as { [key in BookingStatus]: number });
-
-    return {
-      totalBookings,
-      totalRevenue,
-      averageBookingValue: totalBookings > 0 ? totalRevenue / totalBookings : 0,
-      bookingsByStatus,
-      revenueByMonth: this.calculateRevenueTrends(bookings),
-      occupancyRates: this.calculateOccupancyRates(bookings),
-      activityAnalytics: this.calculateActivityAnalytics(bookings)
-    };
-  }
-
-  // Get performance metrics
-  public async getPerformanceMetrics(): Promise<PerformanceMetrics> {
-    const bookings = this.bookingService.getAllBookings();
-    const currentPeriod = bookings.filter(b => b.tourStartDate >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
-    const previousPeriod = bookings.filter(b => 
-      b.tourStartDate >= new Date(Date.now() - 60 * 24 * 60 * 60 * 1000) &&
-      b.tourStartDate < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    // In a real implementation, we would connect bookings to destinations and tours
+    // For now, we'll randomly assign destinations and tours to our mock bookings
+    
+    const destinations = Object.keys(mockCurrencyData.destinations);
+    
+    // Randomly assign destinations and tours to bookings for demonstration
+    const filteredBookings = mockBookings.filter(booking => 
+      booking.bookingDate >= startDate && 
+      booking.bookingDate <= endDate
     );
-
-    return {
-      revenueGrowth: {
-        period: 'Monthly',
-        current: currentPeriod.reduce((sum, b) => sum + b.totalCost, 0),
-        previous: previousPeriod.reduce((sum, b) => sum + b.totalCost, 0),
-        percentage: currentPeriod.length > 0 ? 
-          ((currentPeriod.reduce((sum, b) => sum + b.totalCost, 0) / 
-            previousPeriod.reduce((sum, b) => sum + b.totalCost, 0) - 1) * 100) : 0
-      },
-      bookingConversionRate: {
-        totalInquiries: 0, // TODO: Track inquiries
-        totalBookings: bookings.length,
-        conversionRate: 0 // Will be calculated when inquiries are tracked
-      },
-      averageBookingLeadTime: {
-        days: bookings.reduce((sum, b) => 
-          sum + Math.floor((b.tourStartDate.getTime() - b.bookingDate.getTime()) / 
-            (1000 * 60 * 60 * 24)), 0) / bookings.length,
-        bookings: bookings.length
-      },
-      cancellationRate: {
-        totalBookings: bookings.length,
-        cancelledBookings: bookings.filter(b => b.status === BookingStatus.CANCELLED).length,
-        rate: bookings.length > 0 ? 
-          (bookings.filter(b => b.status === BookingStatus.CANCELLED).length / bookings.length) * 100 : 0
-      }
-    };
-  }
-
-  // Helper function to calculate booking sources
-  private calculateBookingSources(bookings: Booking[]): any[] {
-    const sources = bookings.reduce((acc, booking) => {
-      const sourceKey = `${booking.source.source}-${booking.source.medium}-${booking.source.campaign}`;
-      if (!acc[sourceKey]) {
-        acc[sourceKey] = {
-          source: booking.source.source,
-          medium: booking.source.medium,
-          campaign: booking.source.campaign,
-          bookings: 0,
-          revenue: 0,
-          conversionRate: 0
-        };
-      }
-      acc[sourceKey].bookings++;
-      acc[sourceKey].revenue += booking.totalCost;
-      return acc;
-    }, {} as Record<string, any>);
-
-    // Calculate conversion rates
-    const totalBookings = bookings.length;
-    Object.values(sources).forEach(source => {
-      source.conversionRate = totalBookings > 0 ? 
-        (source.bookings / totalBookings) * 100 : 0;
-    });
-
-    return Object.values(sources);
-  }
-
-  // Get trend analysis
-  public async getTrendAnalysis(filters: AnalyticsFilters): Promise<TrendAnalysis> {
-    const bookings = this.filterBookingsByDate(this.bookingService.getAllBookings(), filters.dateRange);
-
-    const monthlyData = this.calculateRevenueTrends(bookings);
-
-    const seasonalPatterns: any[] = [];
-    for (let month = 0; month < 12; month++) {
-      const date = new Date(filters.dateRange.start);
-      date.setMonth(month);
+    
+    filteredBookings.forEach(booking => {
+      const destination = destinations[Math.floor(Math.random() * destinations.length)];
+      const destinationData = mockCurrencyData.destinations[destination];
+      const tour = destinationData.tours[Math.floor(Math.random() * destinationData.tours.length)];
       
-      const monthBookings = bookings.filter(b => 
-        b.tourStartDate.getMonth() === month && 
-        b.tourStartDate.getFullYear() === date.getFullYear()
-      );
-
-      seasonalPatterns.push({
-        month: date.toLocaleString('default', { month: 'long' }),
-        bookings: monthBookings.length,
-        revenue: monthBookings.reduce((sum, b) => sum + b.totalCost, 0),
-        occupancy: monthBookings.reduce((sum, b) => 
-          sum + (b.tourEndDate.getTime() - b.tourStartDate.getTime()) / 
-          (1000 * 60 * 60 * 24), 0)
+      destinationData.bookings.push({
+        ...booking,
+        destination,
+        tour
+      });
+    });
+    
+    // Group data based on groupBy parameter
+    if (groupBy === "country") {
+      Object.entries(mockCurrencyData.destinations).forEach(([country, data]: [string, any]) => {
+        const totalAmount = data.bookings.reduce(
+          (sum: number, booking: any) => sum + booking.totalAmount / data.conversionRate, 0
+        );
+        
+        groupedData[country] = {
+          totalAmount: totalAmount * mockCurrencyData.rates[currency],
+          bookingCount: data.bookings.length
+        };
+      });
+    } else if (groupBy === "region") {
+      const regions: Record<string, { totalAmount: number, bookingCount: number }> = {};
+      
+      Object.entries(mockCurrencyData.destinations).forEach(([country, data]: [string, any]) => {
+        const region = data.region;
+        if (!regions[region]) {
+          regions[region] = { totalAmount: 0, bookingCount: 0 };
+        }
+        
+        regions[region].totalAmount += data.bookings.reduce(
+          (sum: number, booking: any) => sum + booking.totalAmount / data.conversionRate, 0
+        );
+        regions[region].bookingCount += data.bookings.length;
+      });
+      
+      // Convert to desired currency
+      Object.entries(regions).forEach(([region, data]) => {
+        groupedData[region] = {
+          totalAmount: data.totalAmount * mockCurrencyData.rates[currency],
+          bookingCount: data.bookingCount
+        };
       });
     }
-
-    return {
-      revenueTrends: monthlyData.map(data => ({
-        period: data.month,
-        revenue: data.revenue,
-        growth: data.bookings > 0 ? 
-          ((data.revenue / (monthlyData[data.bookings - 1]?.revenue || 1) - 1) * 100) : 0
+    
+    return generateReport({
+      title: `Revenue by ${groupBy.charAt(0).toUpperCase() + groupBy.slice(1)} Report`,
+      description: `Revenue from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()} grouped by ${groupBy}`,
+      data: Object.entries(groupedData).map(([key, value]: [string, any]) => ({
+        name: key,
+        revenue: value.totalAmount.toFixed(2),
+        bookings: value.bookingCount,
+        currency
       })),
-      seasonalPatterns,
-      customerDemographics: [], // TODO: Track customer demographics
-      bookingSources: this.calculateBookingSources(bookings)
-    };
+      summary: {
+        totalRevenue: Object.values(groupedData).reduce(
+          (sum: number, value: any) => sum + value.totalAmount, 0
+        ).toFixed(2) + ` ${currency}`,
+        totalBookings: filteredBookings.length
+      }
+    });
+  } catch (error) {
+    console.error('Error generating revenue by destination report:', error);
+    throw error;
   }
-}
+};
+
+// Performance Reports
+export const getQuoteConversionRate = async (startDate: Date, endDate: Date): Promise<any> => {
+  // This is a mock implementation. In a real-world scenario,
+  // you would need to relate quotes to bookings in the database.
+  
+  // Assume 70% of bookings came from quotes for demonstration
+  const bookingsInPeriod = mockBookings.filter(booking => 
+    booking.bookingDate >= startDate && 
+    booking.bookingDate <= endDate
+  );
+  
+  const quotesInPeriod = Math.floor(bookingsInPeriod.length / 0.7);
+  const conversionRate = (bookingsInPeriod.length / quotesInPeriod) * 100;
+  
+  return generateReport({
+    title: "Quote Conversion Rate Report",
+    description: `Quote conversion rate from ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`,
+    data: {
+      totalQuotes: quotesInPeriod,
+      convertedQuotes: bookingsInPeriod.length,
+      conversionRate: conversionRate.toFixed(2) + "%"
+    },
+    summary: {
+      conversionRate: conversionRate.toFixed(2) + "%"
+    }
+  });
+};
+

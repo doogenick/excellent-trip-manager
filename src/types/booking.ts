@@ -1,99 +1,75 @@
 
-// Type definitions for Booking-related components
+export enum BookingStatus {
+  PENDING = 'pending',
+  CONFIRMED = 'confirmed',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+  REFUNDED = 'refunded',
+}
 
-export interface Passenger {
+export interface Booking {
   id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  passportNumber?: string;
-  nationality?: string;
-  dietaryRequirements?: string[];
-  specialRequests?: string;
-  dateOfBirth?: Date;
-}
-
-export interface EmergencyContact {
-  name: string;
-  relationship: string;
-  phone: string;
-  email?: string;
-}
-
-export interface AccommodationPreference {
-  roomType: string;
-  mealBasis: string;
-}
-
-export interface BookingFormData {
-  passengers: Passenger[];
-  leadPassenger: Passenger;
-  emergencyContact: EmergencyContact;
-  accommodation: AccommodationPreference;
-  specialRequirements?: string;
-  paymentMethod?: string;
-  termsAccepted: boolean;
-}
-
-export interface BookingStatus {
-  status: 'draft' | 'pending' | 'confirmed' | 'cancelled' | 'completed';
-  statusDate: Date;
-  statusNote?: string;
-}
-
-export interface PaymentDetails {
-  method: 'credit_card' | 'bank_transfer' | 'cash' | 'other';
-  amount: number;
-  currency: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
-  date: Date;
-  reference?: string;
-}
-
-export interface BookingSummary {
-  id: string;
+  clientId: string;
   quoteId: string;
-  reference: string;
   status: BookingStatus;
   bookingDate: Date;
-  customer: {
+  totalAmount: number;
+  depositAmount: number;
+  depositPaid: boolean;
+  depositDueDate?: Date;
+  balanceDueDate?: Date;
+  notes: string;
+  paymentHistory: Array<{
     id: string;
-    name: string;
-    email: string;
-  };
-  travelInfo: {
-    startDate: Date;
-    endDate: Date;
-    totalPassengers: number;
-    destinations: string[];
-  };
-  financials: {
-    totalAmount: number;
-    depositAmount: number;
-    balanceAmount: number;
-    currency: string;
-    paymentStatus: 'not_paid' | 'deposit_paid' | 'fully_paid' | 'refunded';
-  };
+    date: Date;
+    amount: number;
+    method: string;
+    reference: string;
+  }>;
 }
 
-export const defaultEmptyPassenger: Passenger = {
-  id: "",
-  firstName: "",
-  lastName: "",
-  email: "",
-  phone: ""
+export interface BookingRequest {
+  clientId: string;
+  quoteId: string;
+  bookingDate: Date;
+  depositAmount: number;
+  notes: string;
+}
+
+export interface Activity {
+  id: string;
+  name: string;
+  description: string;
+  location: string;
+  price: number;
+  duration: string;
+  maximumCapacity: number;
+  availabilityCalendar: Record<string, number>;
+  isActive: boolean;
+}
+
+export interface ActivityBooking {
+  id: string;
+  activityId: string;
+  bookingId: string;
+  date: Date;
+  participants: number;
+  status: BookingStatus;
+  specialRequests: string;
+}
+
+// Helper function to check if a value is a valid BookingStatus
+export function isValidBookingStatus(status: any): status is BookingStatus {
+  return Object.values(BookingStatus).includes(status as BookingStatus);
+}
+
+// Helper functions to use in services
+export const BookingStatusUtils = {
+  isPending: (status: BookingStatus) => status === BookingStatus.PENDING,
+  isConfirmed: (status: BookingStatus) => status === BookingStatus.CONFIRMED,
+  isCompleted: (status: BookingStatus) => status === BookingStatus.COMPLETED,
+  isCancelled: (status: BookingStatus) => status === BookingStatus.CANCELLED,
+  isRefunded: (status: BookingStatus) => status === BookingStatus.REFUNDED,
+  values: () => Object.values(BookingStatus)
 };
 
-export const createEmptyPassenger = (): Passenger => ({
-  id: `passenger-${Date.now()}`,
-  firstName: "",
-  lastName: "",
-  email: "",
-  phone: ""
-});
-
-export const defaultAccommodationPreference: AccommodationPreference = {
-  roomType: "double",
-  mealBasis: "half-board"
-};
