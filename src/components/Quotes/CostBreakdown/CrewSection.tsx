@@ -3,28 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { crewRoles } from "@/hooks/useTourCalculator";
-
-interface CrewMember {
-  role: string;
-  dailyRate: number;
-  accommodationRate: number;
-  mealAllowance: number;
-}
-
-interface CrewMealRates {
-  breakfast: number;
-  lunch: number;
-  dinner: number;
-}
+import { CrewMember, CrewMealRates } from "@/hooks/useTourCalculator";
+import { Plus, Trash } from "lucide-react";
 
 interface CrewSectionProps {
   crew: CrewMember[];
   setCrew: (crew: CrewMember[]) => void;
   calculateCrewCost: () => number;
-  crewMealRates?: CrewMealRates;
-  setCrewMealRates?: (rates: CrewMealRates) => void;
+  crewMealRates: CrewMealRates;
+  setCrewMealRates: (rates: CrewMealRates) => void;
 }
 
 export function CrewSection({
@@ -34,142 +23,120 @@ export function CrewSection({
   crewMealRates,
   setCrewMealRates
 }: CrewSectionProps) {
+  const addCrewMember = () => {
+    setCrew([
+      ...crew,
+      {
+        role: "driver",
+        dailyRate: 120,
+        accommodationRate: 60,
+        mealAllowance: 30
+      }
+    ]);
+  };
+
+  const updateCrewMember = (index: number, field: keyof CrewMember, value: string | number) => {
+    const updatedCrew = [...crew];
+    updatedCrew[index] = {
+      ...updatedCrew[index],
+      [field]: typeof value === "string" && field !== "role" ? Number(value) : value
+    };
+    setCrew(updatedCrew);
+  };
+
+  const removeCrewMember = (index: number) => {
+    setCrew(crew.filter((_, i) => i !== index));
+  };
+
+  const updateMealRate = (field: keyof CrewMealRates, value: number) => {
+    setCrewMealRates({
+      ...crewMealRates,
+      [field]: value
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          Crew
-        </CardTitle>
-        <CardDescription>Manage crew and related expenses</CardDescription>
+        <CardTitle>Crew</CardTitle>
+        <CardDescription>Configure tour crew and their costs</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {crew.map((member, index) => (
-          <div key={index} className="p-3 border rounded-md space-y-2">
+          <div key={index} className="p-3 border rounded-md space-y-3">
             <div className="flex justify-between">
-              <Label>Role: {crewRoles.find(r => r.id === member.role)?.name}</Label>
+              <h4 className="font-medium">Crew Member {index + 1}</h4>
               <Button 
                 variant="ghost" 
-                size="sm" 
-                onClick={() => setCrew(crew.filter((_, i) => i !== index))}
+                size="icon" 
+                onClick={() => removeCrewMember(index)}
+                disabled={crew.length <= 1}
               >
-                Remove
+                <Trash className="h-4 w-4" />
+                <span className="sr-only">Remove</span>
               </Button>
             </div>
             
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label htmlFor={`crew-rate-${index}`}>Daily Rate</Label>
-                <Input 
-                  id={`crew-rate-${index}`} 
-                  type="number" 
-                  min={0} 
-                  value={member.dailyRate} 
-                  onChange={(e) => {
-                    const newCrew = [...crew];
-                    newCrew[index].dailyRate = parseInt(e.target.value) || 0;
-                    setCrew(newCrew);
-                  }}
-                />
-              </div>
-              <div>
-                <Label htmlFor={`crew-accom-${index}`}>Accom. Rate</Label>
-                <Input 
-                  id={`crew-accom-${index}`} 
-                  type="number" 
-                  min={0} 
-                  value={member.accommodationRate} 
-                  onChange={(e) => {
-                    const newCrew = [...crew];
-                    newCrew[index].accommodationRate = parseInt(e.target.value) || 0;
-                    setCrew(newCrew);
-                  }}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select 
+                value={member.role} 
+                onValueChange={(value) => updateCrewMember(index, "role", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {crewRoles.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
-            <div>
-              <Label htmlFor={`crew-meal-${index}`}>Meal Allowance</Label>
-              <Input 
-                id={`crew-meal-${index}`} 
-                type="number" 
-                min={0} 
-                value={member.mealAllowance} 
-                onChange={(e) => {
-                  const newCrew = [...crew];
-                  newCrew[index].mealAllowance = parseInt(e.target.value) || 0;
-                  setCrew(newCrew);
-                }}
-              />
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Daily Rate ($)</Label>
+                <Input 
+                  type="number" 
+                  min={0}
+                  value={member.dailyRate} 
+                  onChange={(e) => updateCrewMember(index, "dailyRate", e.target.value)} 
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Accommodation ($)</Label>
+                <Input 
+                  type="number" 
+                  min={0}
+                  value={member.accommodationRate} 
+                  onChange={(e) => updateCrewMember(index, "accommodationRate", e.target.value)} 
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Meal Allowance ($)</Label>
+                <Input 
+                  type="number" 
+                  min={0}
+                  value={member.mealAllowance} 
+                  onChange={(e) => updateCrewMember(index, "mealAllowance", e.target.value)} 
+                />
+              </div>
             </div>
           </div>
         ))}
         
-        {crew.length < 3 && (
-          <Button 
-            variant="outline" 
-            className="w-full" 
-            onClick={() => setCrew([...crew, { 
-              role: crewRoles.find(r => !crew.some(c => c.role === r.id))?.id || "assistant", 
-              dailyRate: 80, 
-              accommodationRate: 50, 
-              mealAllowance: 25 
-            }])}
-          >
-            Add Crew Member
-          </Button>
-        )}
+        <Button variant="outline" onClick={addCrewMember} className="w-full">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Crew Member
+        </Button>
         
-        {crewMealRates && setCrewMealRates && (
-          <div className="p-3 border rounded-md space-y-2 mt-4">
-            <Label>Crew Meal Rates</Label>
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <Label htmlFor="crew-breakfast">Breakfast</Label>
-                <Input
-                  id="crew-breakfast"
-                  type="number"
-                  min={0}
-                  value={crewMealRates.breakfast}
-                  onChange={(e) => setCrewMealRates({
-                    ...crewMealRates,
-                    breakfast: Number(e.target.value) || 0
-                  })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="crew-lunch">Lunch</Label>
-                <Input
-                  id="crew-lunch"
-                  type="number"
-                  min={0}
-                  value={crewMealRates.lunch}
-                  onChange={(e) => setCrewMealRates({
-                    ...crewMealRates,
-                    lunch: Number(e.target.value) || 0
-                  })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="crew-dinner">Dinner</Label>
-                <Input
-                  id="crew-dinner"
-                  type="number"
-                  min={0}
-                  value={crewMealRates.dinner}
-                  onChange={(e) => setCrewMealRates({
-                    ...crewMealRates,
-                    dinner: Number(e.target.value) || 0
-                  })}
-                />
-              </div>
-            </div>
+        <div className="p-3 bg-muted/50 rounded-md">
+          <h4 className="font-medium">Cost Summary</h4>
+          <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
+            <div>Total crew cost:</div>
+            <div className="font-medium">${calculateCrewCost().toFixed(2)}</div>
           </div>
-        )}
-        
-        <div className="flex justify-between text-sm pt-2 border-t">
-          <span>Total Crew Cost:</span>
-          <span className="font-medium">${calculateCrewCost().toLocaleString()}</span>
         </div>
       </CardContent>
     </Card>

@@ -1,9 +1,8 @@
 
-import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 
 interface PrePostTourSectionProps {
   prePostNights: number;
@@ -24,60 +23,64 @@ export function PrePostTourSection({
   setPrePostMarkup,
   calculatePrePostTourCost
 }: PrePostTourSectionProps) {
+  const prePostCost = calculatePrePostTourCost();
+  
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
-          Pre/Post Tour Options
-        </CardTitle>
-        <CardDescription>Configure optional pre/post tour offerings</CardDescription>
+        <CardTitle>Pre/Post Tour</CardTitle>
+        <CardDescription>Configure pre/post tour options</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="pre-post-nights">Pre/Post Nights</Label>
-            <Input 
-              id="pre-post-nights" 
-              type="number" 
-              min={1} 
-              max={10} 
-              value={prePostNights} 
-              onChange={(e) => setPrePostNights(parseInt(e.target.value) || 1)}
+        <div className="space-y-2">
+          <Label>Number of Additional Nights</Label>
+          <div className="flex items-center gap-2">
+            <Slider
+              value={[prePostNights]}
+              onValueChange={(value) => setPrePostNights(value[0])}
+              min={0}
+              max={10}
+              step={1}
+              className="flex-1"
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="pre-post-cost">Cost Per Night</Label>
-            <Input 
-              id="pre-post-cost" 
-              type="number" 
-              min={10} 
-              value={prePostAccommodationCost} 
-              onChange={(e) => setPrePostAccommodationCost(parseInt(e.target.value) || 10)}
-            />
+            <span className="w-10 text-center">{prePostNights}</span>
           </div>
         </div>
         
         <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor="pre-post-markup">Pre/Post Tour Markup: {prePostMarkup}%</Label>
-          </div>
-          <Slider 
-            id="pre-post-markup" 
-            min={0} 
-            max={50} 
-            step={1} 
-            value={[prePostMarkup]} 
-            onValueChange={(values) => setPrePostMarkup(values[0])}
+          <Label htmlFor="prePostAccommodationCost">Cost per Night ($)</Label>
+          <Input
+            id="prePostAccommodationCost"
+            type="number"
+            min={0}
+            value={prePostAccommodationCost}
+            onChange={(e) => setPrePostAccommodationCost(Number(e.target.value))}
           />
         </div>
         
-        <div className="p-3 bg-muted rounded-md">
-          <p className="text-sm font-medium mb-1">Pre/Post Tour Package (per person)</p>
-          <p className="text-xl font-bold">${calculatePrePostTourCost().toFixed(0)}</p>
-          <p className="text-xs text-muted-foreground">
-            For {prePostNights} {prePostNights === 1 ? 'night' : 'nights'} of additional accommodation
-          </p>
+        <div className="space-y-2">
+          <Label htmlFor="prePostMarkup">Markup (%)</Label>
+          <Input
+            id="prePostMarkup"
+            type="number"
+            min={0}
+            max={100}
+            value={prePostMarkup}
+            onChange={(e) => setPrePostMarkup(Number(e.target.value))}
+          />
+        </div>
+        
+        <div className="p-3 bg-muted/50 rounded-md">
+          <h4 className="font-medium">Cost Summary</h4>
+          <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
+            <div>Total pre/post tour cost:</div>
+            <div className="font-medium">${prePostCost.toFixed(2)}</div>
+            
+            <div>Cost per night:</div>
+            <div className="font-medium">
+              ${prePostNights ? (prePostCost / prePostNights).toFixed(2) : '0.00'}
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

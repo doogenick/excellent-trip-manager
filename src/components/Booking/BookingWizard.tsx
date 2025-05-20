@@ -1,200 +1,187 @@
-import React, { useState } from 'react';
-import { BookingRequest, Passenger } from '../../types/booking';
-import { BookingService } from '../../services/bookingService';
 
-export const BookingWizard = () => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [bookingData, setBookingData] = useState<Partial<BookingRequest>>({
-    passengers: [{}],
-    requestedActivities: []
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { WizardSteps } from "../Quotes/QuoteWizard/WizardSteps";
+import { Passenger, EmergencyContact, AccommodationPreference, createEmptyPassenger, defaultAccommodationPreference } from "@/types/booking";
+
+export function BookingWizard() {
+  const [activeStep, setActiveStep] = useState(0);
+  const [stepValidity, setStepValidity] = useState<boolean[]>([false, false, false, false]);
+  
+  // Passenger information
+  const [leadPassenger, setLeadPassenger] = useState<Passenger>(createEmptyPassenger());
+  const [additionalPassengers, setAdditionalPassengers] = useState<Passenger[]>([]);
+  
+  // Emergency contact
+  const [emergencyContact, setEmergencyContact] = useState<EmergencyContact>({
+    name: "",
+    relationship: "",
+    phone: ""
   });
-  const [error, setError] = useState<string | null>(null);
-
-  const bookingService = BookingService.getInstance();
-
-  const handlePassengerChange = (index: number, field: keyof Passenger, value: any) => {
-    const passengers = [...(bookingData.passengers || [])];
-    passengers[index] = {
-      ...(passengers[index] || {}),
-      [field]: value
-    };
-    setBookingData({ ...bookingData, passengers });
-  };
-
+  
+  // Accommodation preferences
+  const [accommodationPreference, setAccommodationPreference] = useState<AccommodationPreference>(defaultAccommodationPreference);
+  
+  // Additional booking details
+  const [specialRequirements, setSpecialRequirements] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  
+  const steps = [
+    "Lead Passenger",
+    "Additional Travelers",
+    "Accommodation",
+    "Payment",
+    "Review & Confirm"
+  ];
+  
   const handleNext = () => {
-    if (currentStep < 4) {
-      setCurrentStep(currentStep + 1);
+    if (activeStep < steps.length - 1) {
+      setActiveStep(activeStep + 1);
+    } else {
+      handleCreateBooking();
     }
   };
 
-  const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+  const handleBack = () => {
+    if (activeStep > 0) {
+      setActiveStep(activeStep - 1);
     }
   };
-
-  const handleSubmit = async () => {
-    try {
-      const completeData = bookingData as BookingRequest;
-      const booking = await bookingService.createBooking(completeData);
-      alert(`Booking created successfully! Reference: ${booking.bookingReference}`);
-    } catch (err) {
-      setError(err.message);
-    }
+  
+  const handleCreateBooking = () => {
+    // Here we would submit the booking data
+    console.log("Creating booking with data:", {
+      leadPassenger,
+      additionalPassengers,
+      emergencyContact,
+      accommodationPreference,
+      specialRequirements,
+      paymentMethod,
+      termsAccepted
+    });
   };
-
-  const renderStep = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">1. Tour Details</h2>
-            <div>
-              <label>Tour Start Date</label>
-              <input
-                type="date"
-                value={bookingData.tourStartDate?.toISOString().split('T')[0] || ''}
-                onChange={(e) => setBookingData({ ...bookingData, tourStartDate: new Date(e.target.value) })}
-              />
-            </div>
-            <div>
-              <label>Tour End Date</label>
-              <input
-                type="date"
-                value={bookingData.tourEndDate?.toISOString().split('T')[0] || ''}
-                onChange={(e) => setBookingData({ ...bookingData, tourEndDate: new Date(e.target.value) })}
-              />
-            </div>
-          </div>
-        );
-      case 2:
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">2. Passenger Details</h2>
-            {bookingData.passengers?.map((passenger, index) => (
-              <div key={index} className="border p-4 rounded">
-                <h3>Passenger {index + 1}</h3>
-                <div className="space-y-2">
-                  <div>
-                    <label>First Name</label>
-                    <input
-                      value={passenger.firstName || ''}
-                      onChange={(e) => handlePassengerChange(index, 'firstName', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label>Last Name</label>
-                    <input
-                      value={passenger.lastName || ''}
-                      onChange={(e) => handlePassengerChange(index, 'lastName', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label>Email</label>
-                    <input
-                      type="email"
-                      value={passenger.email || ''}
-                      onChange={(e) => handlePassengerChange(index, 'email', e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-            <button
-              onClick={() => setBookingData({ ...bookingData, passengers: [...(bookingData.passengers || []), {}] })}
-            >
-              Add Passenger
-            </button>
-          </div>
-        );
-      case 3:
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">3. Activities & Preferences</h2>
-            <div>
-              <label>Room Type</label>
-              <select
-                value={bookingData.accommodationPreferences?.roomType || ''}
-                onChange={(e) => setBookingData({
-                  ...bookingData,
-                  accommodationPreferences: {
-                    ...(bookingData.accommodationPreferences || {}),
-                    roomType: e.target.value
-                  }
-                })}
-              >
-                <option value="">Select Room Type</option>
-                <option value="single">Single</option>
-                <option value="double">Double/Twin</option>
-                <option value="triple">Triple</option>
-                <option value="family">Family</option>
-                <option value="dorm">Dormitory</option>
-                <option value="camping">Camping</option>
-              </select>
-            </div>
-            <div>
-              <label>Meal Basis</label>
-              <select
-                value={bookingData.accommodationPreferences?.mealBasis || ''}
-                onChange={(e) => setBookingData({
-                  ...bookingData,
-                  accommodationPreferences: {
-                    ...(bookingData.accommodationPreferences || {}),
-                    mealBasis: e.target.value
-                  }
-                })}
-              >
-                <option value="">Select Meal Basis</option>
-                <option value="ro">Room Only</option>
-                <option value="bb">Bed & Breakfast</option>
-                <option value="hb">Half Board</option>
-                <option value="fb">Full Board</option>
-                <option value="ai">All Inclusive</option>
-              </select>
-            </div>
-          </div>
-        );
-      case 4:
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">4. Review & Confirm</h2>
-            <div className="p-4 border rounded">
-              <h3>Booking Summary</h3>
-              <div className="space-y-2">
-                <div>Tour Dates: {bookingData.tourStartDate?.toLocaleDateString()} - {bookingData.tourEndDate?.toLocaleDateString()}</div>
-                <div>Passengers: {(bookingData.passengers || []).length}</div>
-                <div>Room Type: {bookingData.accommodationPreferences?.roomType}</div>
-                <div>Meal Basis: {bookingData.accommodationPreferences?.mealBasis}</div>
-              </div>
-            </div>
-            <div className="flex justify-end space-x-4">
-              <button onClick={handlePrevious}>Previous</button>
-              <button onClick={handleSubmit} className="bg-blue-500 text-white px-4 py-2 rounded">
-                Confirm Booking
-              </button>
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
+  
+  // Update step validity status
+  const updateStepValidity = (step: number, isValid: boolean) => {
+    setStepValidity(prev => {
+      const newValidity = [...prev];
+      newValidity[step] = isValid;
+      return newValidity;
+    });
   };
-
+  
+  const isNextDisabled = () => {
+    // Check if current step is valid
+    return !stepValidity[activeStep];
+  };
+  
+  const handleLeadPassengerChange = (passenger: Passenger) => {
+    setLeadPassenger(passenger);
+  };
+  
+  const handleAddPassenger = () => {
+    setAdditionalPassengers([...additionalPassengers, createEmptyPassenger()]);
+  };
+  
+  const handleUpdatePassenger = (index: number, passenger: Passenger) => {
+    const updatedPassengers = [...additionalPassengers];
+    updatedPassengers[index] = passenger;
+    setAdditionalPassengers(updatedPassengers);
+  };
+  
+  const handleRemovePassenger = (index: number) => {
+    setAdditionalPassengers(additionalPassengers.filter((_, i) => i !== index));
+  };
+  
+  const handleEmergencyContactChange = (contact: EmergencyContact) => {
+    setEmergencyContact(contact);
+  };
+  
+  const handleAccommodationChange = (preference: Partial<AccommodationPreference>) => {
+    setAccommodationPreference({
+      ...accommodationPreference,
+      ...preference
+    });
+  };
+  
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Tour Booking Wizard</h1>
-      {error && <div className="bg-red-100 text-red-700 p-4 rounded">{error}</div>}
-      <div className="bg-white p-6 rounded shadow-md">
-        {renderStep()}
-        {currentStep !== 1 && currentStep !== 4 && (
-          <div className="flex justify-end space-x-4 mt-4">
-            <button onClick={handlePrevious}>Previous</button>
-            <button onClick={handleNext} className="bg-blue-500 text-white px-4 py-2 rounded">
-              Next
-            </button>
-          </div>
-        )}
-      </div>
+    <div className="max-w-4xl mx-auto p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Create New Booking</CardTitle>
+          <CardDescription>Step {activeStep + 1} of {steps.length}: {steps[activeStep]}</CardDescription>
+          
+          <WizardSteps steps={steps} activeStep={activeStep} />
+        </CardHeader>
+        <CardContent>
+          {/* Step content would go here */}
+          {activeStep === 0 && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">Lead Passenger Information</h2>
+              <p className="text-muted-foreground">
+                Enter details for the main traveler who will be the primary contact for this booking.
+              </p>
+              {/* Lead passenger form fields would go here */}
+            </div>
+          )}
+          
+          {activeStep === 1 && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">Additional Travelers</h2>
+              <p className="text-muted-foreground">
+                Add any additional travelers who will be joining on this trip.
+              </p>
+              {/* Additional passengers form would go here */}
+            </div>
+          )}
+          
+          {activeStep === 2 && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">Accommodation Preferences</h2>
+              <p className="text-muted-foreground">
+                Select your preferred accommodation options for this trip.
+              </p>
+              {/* Accommodation preferences form would go here */}
+            </div>
+          )}
+          
+          {activeStep === 3 && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">Payment Details</h2>
+              <p className="text-muted-foreground">
+                Select your payment method and review the payment schedule.
+              </p>
+              {/* Payment information form would go here */}
+            </div>
+          )}
+          
+          {activeStep === 4 && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">Review & Confirm</h2>
+              <p className="text-muted-foreground">
+                Please review all the booking information before confirming.
+              </p>
+              {/* Booking summary would go here */}
+            </div>
+          )}
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button
+            variant="outline"
+            onClick={handleBack}
+            disabled={activeStep === 0}
+          >
+            {activeStep === 0 ? "Cancel" : "Back"}
+          </Button>
+          <Button onClick={handleNext} disabled={isNextDisabled()}>
+            {activeStep === steps.length - 1 ? "Confirm Booking" : "Next"}
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
-};
+}
+
+export default BookingWizard;

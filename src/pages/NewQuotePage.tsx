@@ -1,12 +1,12 @@
 
 import Layout from "@/components/Layout";
-import { QuoteWizard } from "@/components/Quotes/QuoteWizard";
+import { EnhancedQuoteWizard } from "@/components/Quotes/QuoteWizard/EnhancedQuoteWizard";
 
 const NewQuotePage = () => {
   return (
     <Layout>
       <div className="animate-fade-in">
-        <QuoteWizard />
+        <EnhancedQuoteWizard />
       </div>
     </Layout>
   );

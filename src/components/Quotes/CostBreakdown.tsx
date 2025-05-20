@@ -50,6 +50,7 @@ export function CostBreakdown() {
         
         <TabsContent value="calculator" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Tour Basics Section */}
             <TourBasicsSection 
               tourDuration={calculator.tourDuration}
               setTourDuration={calculator.setTourDuration}
@@ -63,6 +64,7 @@ export function CostBreakdown() {
               setMaxPax={calculator.setMaxPax}
             />
             
+            {/* Vehicle & Fuel Section */}
             <VehicleFuelSection 
               selectedVehicle={calculator.selectedVehicle}
               setSelectedVehicle={calculator.setSelectedVehicle}
@@ -83,6 +85,7 @@ export function CostBreakdown() {
               setVehicleNotes={calculator.setVehicleNotes}
             />
             
+            {/* Crew Section */}
             <CrewSection 
               crew={calculator.crew}
               setCrew={calculator.setCrew}
@@ -93,6 +96,7 @@ export function CostBreakdown() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Accommodation Section */}
             <AccommodationSection 
               averageAccommodationCost={calculator.averageAccommodationCost}
               setAverageAccommodationCost={calculator.setAverageAccommodationCost}
@@ -107,6 +111,7 @@ export function CostBreakdown() {
               setSelectedMealBasis={calculator.setSelectedMealBasis}
             />
             
+            {/* Meals & Activities Section */}
             <MealsActivitiesSection 
               includedMeals={calculator.includedMeals}
               setIncludedMeals={calculator.setIncludedMeals}
@@ -121,8 +126,10 @@ export function CostBreakdown() {
               activitiesMarkup={calculator.activitiesMarkup}
               setActivitiesMarkup={calculator.setActivitiesMarkup}
               tourDuration={calculator.tourDuration}
+              currentPax={calculator.currentPax}
             />
             
+            {/* Pre/Post Tour Section */}
             <PrePostTourSection 
               prePostNights={calculator.prePostNights}
               setPrePostNights={calculator.setPrePostNights}
@@ -134,6 +141,7 @@ export function CostBreakdown() {
             />
           </div>
           
+          {/* Cost Summary Section */}
           <CostSummarySection 
             calculateVehicleCost={calculator.calculateVehicleCost}
             calculateFuelCost={calculator.calculateFuelCost}
@@ -154,6 +162,7 @@ export function CostBreakdown() {
         </TabsContent>
         
         <TabsContent value="breakdown">
+          {/* Daily Breakdown Table */}
           <DailyBreakdownTable 
             tourDuration={calculator.tourDuration}
             averageAccommodationCost={calculator.averageAccommodationCost}
@@ -173,6 +182,7 @@ export function CostBreakdown() {
         </TabsContent>
         
         <TabsContent value="comparison">
+          {/* Group Size Analysis */}
           <GroupSizeAnalysis 
             minPax={calculator.minPax}
             maxPax={calculator.maxPax}

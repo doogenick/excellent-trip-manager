@@ -1,12 +1,5 @@
-export enum BookingStatus {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  PAID = 'PAID',
-  PARTIALLY_PAID = 'PARTIALLY_PAID',
-  CANCELLED = 'CANCELLED',
-  COMPLETED = 'COMPLETED',
-  REFUNDED = 'REFUNDED'
-}
+
+// Type definitions for Booking-related components
 
 export interface Passenger {
   id: string;
@@ -18,91 +11,89 @@ export interface Passenger {
   nationality?: string;
   dietaryRequirements?: string[];
   specialRequests?: string;
+  dateOfBirth?: Date;
 }
 
-export interface Activity {
-  id: string;
+export interface EmergencyContact {
   name: string;
-  description: string;
-  duration: number; // in minutes
-  capacity: number;
-  price: number;
-  currency: string;
-  category: string;
-  tags: string[];
-  availability: {
-    startDate: Date;
-    endDate: Date;
-    daysOfWeek: number[]; // 0-6 for Sunday-Saturday
-  };
+  relationship: string;
+  phone: string;
+  email?: string;
 }
 
-export interface ActivityBooking {
-  activityId: string;
-  activityName: string;
-  quantity: number;
-  pricePerUnit: number;
-  totalCost: number;
-  currency: string;
-  bookingDate: Date;
-  status: 'CONFIRMED' | 'PENDING' | 'CANCELLED';
-  notes?: string;
-}
-
-export interface AccommodationPreferences {
+export interface AccommodationPreference {
   roomType: string;
   mealBasis: string;
-  specialRequests?: string;
 }
 
-export interface BookingSource {
-  source: string;
-  medium: string;
-  campaign: string;
-  utmParameters: Record<string, string>;
-}
-
-export interface Booking {
-  id: string;
-  bookingDate: Date;
-  tourStartDate: Date;
-  tourEndDate: Date;
-  status: BookingStatus;
+export interface BookingFormData {
   passengers: Passenger[];
-  totalCost: number;
-  paidAmount: number;
-  currency: string;
-  paymentStatus: 'PENDING' | 'PAID' | 'PARTIALLY_PAID' | 'REFUNDED';
+  leadPassenger: Passenger;
+  emergencyContact: EmergencyContact;
+  accommodation: AccommodationPreference;
+  specialRequirements?: string;
   paymentMethod?: string;
-  bookingReference: string;
-  createdAt: Date;
-  updatedAt: Date;
-  cancellationPolicyAccepted: boolean;
-  cancellationPolicy?: {
-    before30Days: number; // % refund
-    before14Days: number;
-    before7Days: number;
-    noShow: number;
-  };
-  notes?: string;
-  createdBy: string;
-  lastModifiedBy: string;
-  activities: ActivityBooking[];
-  accommodationPreferences: AccommodationPreferences;
-  source: BookingSource;
+  termsAccepted: boolean;
 }
 
-export interface BookingRequest {
-  tourId: string;
-  passengers: Passenger[];
-  tourStartDate: Date;
-  tourEndDate: Date;
-  requestedActivities: string[];
-  accommodationPreferences: {
-    roomType: string;
-    mealBasis: string;
-  };
-  specialRequests?: string;
-  promoCode?: string;
-  currency?: string;
+export interface BookingStatus {
+  status: 'draft' | 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  statusDate: Date;
+  statusNote?: string;
 }
+
+export interface PaymentDetails {
+  method: 'credit_card' | 'bank_transfer' | 'cash' | 'other';
+  amount: number;
+  currency: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
+  date: Date;
+  reference?: string;
+}
+
+export interface BookingSummary {
+  id: string;
+  quoteId: string;
+  reference: string;
+  status: BookingStatus;
+  bookingDate: Date;
+  customer: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  travelInfo: {
+    startDate: Date;
+    endDate: Date;
+    totalPassengers: number;
+    destinations: string[];
+  };
+  financials: {
+    totalAmount: number;
+    depositAmount: number;
+    balanceAmount: number;
+    currency: string;
+    paymentStatus: 'not_paid' | 'deposit_paid' | 'fully_paid' | 'refunded';
+  };
+}
+
+export const defaultEmptyPassenger: Passenger = {
+  id: "",
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: ""
+};
+
+export const createEmptyPassenger = (): Passenger => ({
+  id: `passenger-${Date.now()}`,
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: ""
+});
+
+export const defaultAccommodationPreference: AccommodationPreference = {
+  roomType: "double",
+  mealBasis: "half-board"
+};
