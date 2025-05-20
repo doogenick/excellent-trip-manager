@@ -5,7 +5,20 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { QuoteType, FITTourType, GroupTourType, ServiceLevel, AccommodationType, MealPlan, CrewMemberType, VehicleType, TourType } from "@/types/quotes";
+import { 
+  QuoteType, 
+  FITTourType, 
+  GroupTourType, 
+  ServiceLevel, 
+  AccommodationType, 
+  MealPlan, 
+  CrewMemberType, 
+  VehicleType, 
+  TourType, 
+  CrewMember, 
+  TrailerDetails,
+  VehicleDetails 
+} from "@/types/quotes";
 import { WizardSteps } from "./WizardSteps";
 import { ClientInformationStep } from "./steps/ClientInformationStep";
 import { TripDetailsStep } from "./steps/TripDetailsStep";
@@ -15,7 +28,10 @@ import { ReviewStep } from "./steps/ReviewStep";
 import { TourTypeStep } from "./steps/TourTypeStep";
 import { FITDetailsStep } from "./steps/FITDetailsStep";
 import { GroupDetailsStep } from "./steps/GroupDetailsStep";
-import { ItineraryStep, ItineraryItem, VehicleDetails } from "./steps/ItineraryStep";
+import { ItineraryStep, ItineraryItem, VehicleDetails as ItineraryVehicleDetails } from "./steps/ItineraryStep";
+import { QuoteHeaderStep } from "./steps/QuoteHeaderStep";
+import { CrewManagementStep } from "./steps/CrewManagementStep";
+import { VehicleManagementStep } from "./steps/VehicleManagementStep";
 
 export function QuoteWizard() {
   const navigate = useNavigate();
@@ -75,8 +91,30 @@ export function QuoteWizard() {
   // Itinerary with daily KM tracking
   const [itinerary, setItinerary] = useState<ItineraryItem[]>([]);
   
-  // Vehicle and fuel calculation
-  const [vehicleDetails, setVehicleDetails] = useState<VehicleDetails>({
+  // Quote header information
+  const [quoteHeader, setQuoteHeader] = useState({
+    referenceNumber: "",
+    autoGenerateReference: true,
+    issueDate: new Date(),
+    validUntil: new Date(new Date().setMonth(new Date().getMonth() + 1)),
+    travelYear: new Date().getFullYear().toString(),
+    clientName: "",
+    agentName: "",
+    tourCode: ""
+  });
+
+  // Vehicle management
+  const [vehicles, setVehicles] = useState<VehicleDetails[]>([]);
+  const [trailers, setTrailers] = useState<TrailerDetails[]>([]);
+  const [startTransitKm, setStartTransitKm] = useState(0);
+  const [endTransitKm, setEndTransitKm] = useState(0);
+  const [fuelPricePerLiter, setFuelPricePerLiter] = useState(1.5);
+
+  // Crew management
+  const [crewMembers, setCrewMembers] = useState<CrewMember[]>([]);
+
+  // For backward compatibility with ItineraryStep
+  const [vehicleDetails, setVehicleDetails] = useState<ItineraryVehicleDetails>({
     selectedVehicle: "",
     customVehicleName: "",
     customDailyRate: 0,
@@ -98,11 +136,14 @@ export function QuoteWizard() {
   // Define steps based on tour type
   const steps = [
     "Tour Type",
+    "Quote Header",
     "Client Information",
     "Trip Details",
     "Passengers",
     tourType === "FIT" ? "FIT Details" : "Group Details",
     "Itinerary",
+    "Vehicle Management",
+    "Crew Management",
     "Price Calculator",
     "Review"
   ];
@@ -163,16 +204,26 @@ export function QuoteWizard() {
     const quote = {
       tourType,
       clientId,
+      quoteHeader,
       tripDetails,
       passengers,
       ...(tourType === "FIT" ? { fitDetails } : { groupDetails }),
       itinerary,
-      vehicleDetails,
+      vehicles,
+      trailers,
+      transitDetails: {
+        startTransitKm,
+        endTransitKm,
+        fuelPricePerLiter
+      },
+      crewMembers,
       totalKilometers,
-      fuelCost: calculateFuelCost(),
+      fuelCost: calculateEnhancedFuelCost(),
       totalPrice,
       perPersonPrice,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      // Keep old vehicleDetails for backward compatibility
+      vehicleDetails
     };
     
     console.log("Quote created:", quote);
@@ -185,13 +236,31 @@ export function QuoteWizard() {
     setPerPersonPrice(perPerson);
   };
 
-  // Calculate fuel cost based on total distance and vehicle consumption
+  // Calculate fuel cost based on total distance and vehicle consumption (legacy)
   const calculateFuelCost = () => {
     const { customFuelConsumption, fuelPrice } = vehicleDetails;
     if (!customFuelConsumption) return 0;
     
     const litersNeeded = totalKilometers / customFuelConsumption;
     return litersNeeded * fuelPrice;
+  };
+  
+  // Enhanced fuel cost calculation using multiple vehicles
+  const calculateEnhancedFuelCost = () => {
+    // If no vehicles defined, use legacy calculation
+    if (vehicles.length === 0) {
+      return calculateFuelCost();
+    }
+    
+    // Calculate fuel cost for all vehicles
+    const totalDistanceWithTransit = totalKilometers + startTransitKm + endTransitKm;
+    
+    return vehicles.reduce((total, vehicle) => {
+      if (!vehicle.fuelConsumption) return total;
+      const litersPer100km = 100 / vehicle.fuelConsumption;
+      const litersNeeded = (totalDistanceWithTransit / 100) * litersPer100km;
+      return total + (litersNeeded * fuelPricePerLiter);
+    }, 0);
   };
 
   // Use stepValidity to control Next button
@@ -221,16 +290,39 @@ export function QuoteWizard() {
   };
 
   // Convert our new data structure to match expected props for existing components
+  // Props for Quote Header step
+  const quoteHeaderStepProps = {
+    referenceNumber: quoteHeader.referenceNumber,
+    setReferenceNumber: (value: string) => setQuoteHeader(prev => ({ ...prev, referenceNumber: value })),
+    autoGenerateReference: quoteHeader.autoGenerateReference,
+    setAutoGenerateReference: (value: boolean) => setQuoteHeader(prev => ({ ...prev, autoGenerateReference: value })),
+    issueDate: quoteHeader.issueDate,
+    setIssueDate: (date: Date) => setQuoteHeader(prev => ({ ...prev, issueDate: date })),
+    validUntil: quoteHeader.validUntil,
+    setValidUntil: (date: Date) => setQuoteHeader(prev => ({ ...prev, validUntil: date })),
+    travelYear: quoteHeader.travelYear,
+    setTravelYear: (year: string) => setQuoteHeader(prev => ({ ...prev, travelYear: year })),
+    clientName: quoteHeader.clientName,
+    setClientName: (name: string) => setQuoteHeader(prev => ({ ...prev, clientName: name })),
+    agentName: quoteHeader.agentName,
+    setAgentName: (name: string) => setQuoteHeader(prev => ({ ...prev, agentName: name })),
+    tourCode: quoteHeader.tourCode,
+    setTourCode: (code: string) => setQuoteHeader(prev => ({ ...prev, tourCode: code })),
+    tourType: tourType as unknown as TourType | "",
+    setTourType: (type: TourType) => setTourType(type as unknown as QuoteType),
+    onValidChange: (valid: boolean) => updateStepValidity(1, valid)
+  };
+
   const tripStepProps = {
-    quoteType: tourType === "FIT" ? "FIT" : tourType === "GROUP" ? "GROUP" : "",
-    setQuoteType: (value: any) => setTourType(value),
+    quoteType: tourType as QuoteType | "",
+    setQuoteType: (value: QuoteType) => setTourType(value),
     startDate: tripDetails.startDate,
     setStartDate: (date?: Date) => setTripDetails(prev => ({ ...prev, startDate: date })),
     endDate: tripDetails.endDate,
     setEndDate: (date?: Date) => setTripDetails(prev => ({ ...prev, endDate: date })),
     selectedDestinations: tripDetails.destinations,
     setSelectedDestinations: (destinations: string[]) => setTripDetails(prev => ({ ...prev, destinations })),
-    onValidChange: (valid: boolean) => updateStepValidity(2, valid)
+    onValidChange: (valid: boolean) => updateStepValidity(3, valid)
   };
 
   const passengersStepProps = {
@@ -240,19 +332,19 @@ export function QuoteWizard() {
     setChildren: (value: string) => handlePassengerChange('children', value),
     notes: passengers.notes,
     setNotes: (value: string) => handlePassengerChange('notes', value),
-    onValidChange: (valid: boolean) => updateStepValidity(3, valid)
+    onValidChange: (valid: boolean) => updateStepValidity(4, valid)
   };
   
   const fitDetailsStepProps = {
     fitDetails,
     setFitDetails,
-    onValidChange: (valid: boolean) => updateStepValidity(4, valid)
+    onValidChange: (valid: boolean) => updateStepValidity(5, valid)
   };
   
   const groupDetailsStepProps = {
     groupDetails,
     setGroupDetails,
-    onValidChange: (valid: boolean) => updateStepValidity(4, valid)
+    onValidChange: (valid: boolean) => updateStepValidity(5, valid)
   };
   
   const itineraryStepProps = {
@@ -261,22 +353,45 @@ export function QuoteWizard() {
     vehicleDetails,
     setVehicleDetails,
     startDate: tripDetails.startDate,
-    onValidChange: (valid: boolean) => updateStepValidity(5, valid)
+    onValidChange: (valid: boolean) => updateStepValidity(6, valid)
+  };
+
+  const vehicleManagementStepProps = {
+    vehicles,
+    setVehicles,
+    trailers,
+    setTrailers,
+    startTransitKm,
+    setStartTransitKm,
+    endTransitKm,
+    setEndTransitKm,
+    fuelPricePerLiter,
+    setFuelPricePerLiter,
+    totalDistance: totalKilometers,
+    onValidChange: (valid: boolean) => updateStepValidity(7, valid)
+  };
+
+  const crewManagementStepProps = {
+    crewMembers,
+    setCrewMembers,
+    totalDays: itinerary.length,
+    onValidChange: (valid: boolean) => updateStepValidity(8, valid)
   };
   
   const priceCalculatorStepProps = {
     adults: passengers.adults,
     children: passengers.children,
-    quoteType: tourType as string,
+    quoteType: tourType as QuoteType | "",
     selectedDestinations: tripDetails.destinations,
     startDate: tripDetails.startDate,
     endDate: tripDetails.endDate,
-    onPriceChange: handlePriceChange
+    onPriceChange: handlePriceChange,
+    onValidChange: (valid: boolean) => updateStepValidity(9, valid)
   };
   
   const reviewStepProps = {
     clientId,
-    quoteType: tourType === "FIT" ? "FIT" : tourType === "GROUP" ? "GROUP" : "",
+    quoteType: tourType as QuoteType | "",
     startDate: tripDetails.startDate,
     endDate: tripDetails.endDate,
     selectedDestinations: tripDetails.destinations,
@@ -284,7 +399,8 @@ export function QuoteWizard() {
     children: passengers.children,
     notes: passengers.notes,
     totalPrice,
-    perPersonPrice
+    perPersonPrice,
+    onValidChange: (valid: boolean) => updateStepValidity(10, valid)
   };
 
   const renderStepContent = () => {
@@ -292,27 +408,36 @@ export function QuoteWizard() {
       case 0: // Tour Type
         return <TourTypeStep {...tourTypeStepProps} />;
       
-      case 1: // Client Information
+      case 1: // Quote Header
+        return <QuoteHeaderStep {...quoteHeaderStepProps} />;
+      
+      case 2: // Client Information
         return <ClientInformationStep {...clientStepProps} />;
       
-      case 2: // Trip Details
+      case 3: // Trip Details
         return <TripDetailsStep {...tripStepProps} />;
       
-      case 3: // Passengers
+      case 4: // Passengers
         return <PassengersStep {...passengersStepProps} />;
       
-      case 4: // FIT or Group Details
+      case 5: // FIT or Group Details
         return tourType === "FIT" 
           ? <FITDetailsStep {...fitDetailsStepProps} />
           : <GroupDetailsStep {...groupDetailsStepProps} />;
       
-      case 5: // Itinerary
+      case 6: // Itinerary
         return <ItineraryStep {...itineraryStepProps} />;
+        
+      case 7: // Vehicle Management
+        return <VehicleManagementStep {...vehicleManagementStepProps} />;
+        
+      case 8: // Crew Management
+        return <CrewManagementStep {...crewManagementStepProps} />;
       
-      case 6: // Price Calculator
+      case 9: // Price Calculator
         return <PriceCalculatorStep {...priceCalculatorStepProps} />;
       
-      case 7: // Review
+      case 10: // Review
         return <ReviewStep {...reviewStepProps} />;
       
       default:

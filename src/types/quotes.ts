@@ -61,9 +61,17 @@ export interface VehicleDetails {
   deliveryFee?: number;
 }
 
+export enum TrailerType {
+  LUGGAGE = 'LUGGAGE',
+  CAMPING = 'CAMPING',
+  KITCHEN = 'KITCHEN',
+  CUSTOM = 'CUSTOM'
+}
+
 export interface TrailerDetails {
   id: string;
   name: string;
+  type: TrailerType;
   dailyRate: number;
   collectionFee?: number;
   deliveryFee?: number;
